@@ -101,9 +101,9 @@
       </div>
     </div>
     <div id="lotFields">
-      <div class="field"><label>Numero de lot</label><input type="text" id="m-lot" placeholder="ex: 02S25"></div>
       <div class="field"><label>Nombre de poches</label><input type="number" id="m-poches" min="1" value="10"></div>
-      <div class="field"><label>Grammage</label><input type="text" id="m-gram" placeholder="ex: 27g ou K2"></div>
+      <div class="field"><label>Grammage / Reference</label><input type="text" id="m-gram" placeholder="ex: 27g ou K2"></div>
+      <div class="field"><label>Numero de lot</label><input type="text" id="m-lot" placeholder="ex: 02S25"></div>
       <div class="field"><label>Poids/p (kg)</label><input type="number" id="m-poids" step="0.1" placeholder="ex: 5.5"></div>
       <div class="field"><label>Date</label><input type="date" id="m-date"></div>
       <div class="field"><label>Notes</label><input type="text" id="m-notes" placeholder="observations"></div>
@@ -142,10 +142,10 @@
           <option value="4">Tres epaisse</option>
         </select>
         <select id="m-borderstyle">
-          <option value="solid" selected>Pleine</option>
+          <option value="solid">Pleine</option>
           <option value="dashed">Pointillee</option>
           <option value="dotted">Petits points</option>
-          <option value="double">Double</option>
+          <option value="double" selected>Double</option>
         </select>
       </div>
       <input type="color" id="m-bordercolor" value="#1a202c" style="width:100%;height:34px;padding:2px">
@@ -281,6 +281,20 @@ function escapeHtml(str){
   return d.innerHTML;
 }
 
+function formatDateShort(isoDate){
+  if(!isoDate) return '';
+  var parts = isoDate.split('-');
+  if(parts.length!==3) return isoDate;
+  return parts[2]+'/'+parts[1]+'/'+parts[0].slice(2);
+}
+
+function todayISO(){
+  var d = new Date();
+  var mm = String(d.getMonth()+1).padStart(2,'0');
+  var dd = String(d.getDate()).padStart(2,'0');
+  return d.getFullYear()+'-'+mm+'-'+dd;
+}
+
 var searchedLot = null;
 var showDetail = false;
 
@@ -327,14 +341,29 @@ function renderSearchResult(){
   if(showDetail){
     var groups = {};
     matching.forEach(function(b){
-      var key = b.gram || '—';
-      if(!groups[key]) groups[key] = 0;
-      groups[key] += parseInt(b.poches)||0;
+      var key = (b.gram||'—')+'|'+(b.poids||'')+'|'+(b.date||'');
+      if(!groups[key]) groups[key] = {gram:b.gram||'—', poids:b.poids||'', date:b.date||'', poches:0};
+      groups[key].poches += parseInt(b.poches)||0;
     });
     html += '<table style="width:100%;border-collapse:collapse;margin-top:10px;font-size:.82rem">';
-    html += '<thead><tr style="background:#f8f9fa"><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Grammage / Reference</th><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Poches</th></tr></thead><tbody>';
+    html += '<thead><tr style="background:#f8f9fa">'+
+      '<th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Grammage / Reference</th>'+
+      '<th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Poches</th>'+
+      '<th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Poids/p</th>'+
+      '<th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Poids total</th>'+
+      '<th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Date</th>'+
+      '</tr></thead><tbody>';
     Object.keys(groups).sort().forEach(function(k){
-      html += '<tr><td style="padding:6px 8px;border-bottom:1px solid #edf0f3">'+escapeHtml(k)+'</td><td style="padding:6px 8px;border-bottom:1px solid #edf0f3;font-weight:600">'+groups[k]+'p</td></tr>';
+      var g = groups[k];
+      var poidsUnitaire = parseFloat(g.poids)||0;
+      var poidsTotal = poidsUnitaire ? (poidsUnitaire * g.poches).toFixed(1) : '';
+      html += '<tr>'+
+        '<td style="padding:6px 8px;border-bottom:1px solid #edf0f3">'+escapeHtml(g.gram)+'</td>'+
+        '<td style="padding:6px 8px;border-bottom:1px solid #edf0f3;font-weight:600">'+g.poches+'p</td>'+
+        '<td style="padding:6px 8px;border-bottom:1px solid #edf0f3">'+(g.poids?g.poids+'kg':'—')+'</td>'+
+        '<td style="padding:6px 8px;border-bottom:1px solid #edf0f3;font-weight:600">'+(poidsTotal?poidsTotal+'kg':'—')+'</td>'+
+        '<td style="padding:6px 8px;border-bottom:1px solid #edf0f3">'+(g.date?formatDateShort(g.date):'—')+'</td>'+
+        '</tr>';
     });
     html += '</tbody></table>';
   }
@@ -375,11 +404,14 @@ function render(){
           label = escapeHtml(b.libretext||'');
           tipParts = [escapeHtml(b.libretext||'')];
         } else {
-          label = escapeHtml(b.lot||'-')+' '+b.poches+'p';
-          tipParts = [escapeHtml(b.lot||''), b.poches+'p'];
-          if(b.gram) tipParts.push(escapeHtml(b.gram));
-          if(b.poids) tipParts.push(b.poids+'kg');
-          if(b.date) tipParts.push(b.date);
+          var labelParts = [];
+          labelParts.push(b.poches+'p');
+          if(b.gram) labelParts.push(escapeHtml(b.gram));
+          if(b.lot) labelParts.push(escapeHtml(b.lot));
+          if(b.poids) labelParts.push(b.poids+'kg');
+          if(b.date) labelParts.push(formatDateShort(b.date));
+          label = labelParts.join(' ');
+          tipParts = labelParts;
           if(b.notes) tipParts.push(escapeHtml(b.notes));
         }
         var fs = b.fontsize || '12';
@@ -453,7 +485,7 @@ function openNew(r,c){
   document.getElementById('m-poches').value=ppc;
   document.getElementById('m-gram').value='';
   document.getElementById('m-poids').value='';
-  document.getElementById('m-date').value='';
+  document.getElementById('m-date').value=todayISO();
   document.getElementById('m-notes').value='';
   document.getElementById('m-libretext').value='';
   document.getElementById('m-nbcases').value='1';
@@ -461,7 +493,7 @@ function openNew(r,c){
   document.getElementById('m-fontweight').value='700';
   document.getElementById('m-textalign').value='center';
   document.getElementById('m-borderwidth').value='2';
-  document.getElementById('m-borderstyle').value='solid';
+  document.getElementById('m-borderstyle').value='double';
   document.getElementById('m-bordercolor').value='#1a202c';
   pickBlockType('lot');
   selColor = COLORS[Math.floor(Math.random()*COLORS.length)];
@@ -487,7 +519,7 @@ function openEdit(bi){
   document.getElementById('m-fontweight').value=b.fontweight||'700';
   document.getElementById('m-textalign').value=b.textalign||'center';
   document.getElementById('m-borderwidth').value=b.borderwidth||'2';
-  document.getElementById('m-borderstyle').value=b.borderstyle||'solid';
+  document.getElementById('m-borderstyle').value=b.borderstyle||'double';
   document.getElementById('m-bordercolor').value=b.bordercolor||'#1a202c';
   pickBlockType(b.type||'lot');
   selColor = b.color;
