@@ -77,6 +77,14 @@
 
   <div class="legend">Cliquez sur une case vide pour creer un bloc, choisissez la direction de remplissage. Cliquez sur un bloc existant pour le modifier ou le supprimer.</div>
 
+  <div class="toolbar" style="margin-bottom:1rem">
+    <label>Rechercher un lot</label>
+    <input type="text" id="searchLot" placeholder="ex: 02S25" style="width:150px" onkeydown="if(event.key==='Enter')searchLot()">
+    <button class="btn btn-primary" onclick="searchLot()">Rechercher</button>
+    <button class="btn" onclick="clearSearch()">Effacer</button>
+  </div>
+  <div id="searchResult" style="display:none;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:.85rem 1rem;margin-bottom:1rem;font-size:.85rem"></div>
+
   <div class="grid-wrap">
     <table class="grid" id="gridTable"></table>
   </div>
@@ -273,6 +281,68 @@ function escapeHtml(str){
   return d.innerHTML;
 }
 
+var searchedLot = null;
+var showDetail = false;
+
+function searchLot(){
+  var val = document.getElementById('searchLot').value.trim();
+  if(!val){ clearSearch(); return; }
+  searchedLot = val;
+  showDetail = false;
+  renderSearchResult();
+  render();
+}
+
+function clearSearch(){
+  searchedLot = null;
+  showDetail = false;
+  document.getElementById('searchLot').value = '';
+  document.getElementById('searchResult').style.display = 'none';
+  render();
+}
+
+function toggleDetail(){
+  showDetail = !showDetail;
+  renderSearchResult();
+}
+
+function renderSearchResult(){
+  var el = document.getElementById('searchResult');
+  if(!searchedLot){ el.style.display='none'; return; }
+
+  var matching = blocks.filter(function(b){ return b.type!=='libre' && b.lot===searchedLot; });
+  if(!matching.length){
+    el.style.display='block';
+    el.innerHTML = '<strong>'+escapeHtml(searchedLot)+'</strong> : aucune case trouvee.';
+    return;
+  }
+
+  var total = matching.reduce(function(s,b){ return s + (parseInt(b.poches)||0); }, 0);
+
+  var html = '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">';
+  html += '<div><strong>'+escapeHtml(searchedLot)+'</strong> — '+matching.length+' case'+(matching.length>1?'s':'')+' — <strong>'+total+' poches</strong> au total</div>';
+  html += '<button class="btn" onclick="toggleDetail()">'+(showDetail?'Masquer le detail':'Detail par grammage/reference')+'</button>';
+  html += '</div>';
+
+  if(showDetail){
+    var groups = {};
+    matching.forEach(function(b){
+      var key = b.gram || '—';
+      if(!groups[key]) groups[key] = 0;
+      groups[key] += parseInt(b.poches)||0;
+    });
+    html += '<table style="width:100%;border-collapse:collapse;margin-top:10px;font-size:.82rem">';
+    html += '<thead><tr style="background:#f8f9fa"><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Grammage / Reference</th><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Poches</th></tr></thead><tbody>';
+    Object.keys(groups).sort().forEach(function(k){
+      html += '<tr><td style="padding:6px 8px;border-bottom:1px solid #edf0f3">'+escapeHtml(k)+'</td><td style="padding:6px 8px;border-bottom:1px solid #edf0f3;font-weight:600">'+groups[k]+'p</td></tr>';
+    });
+    html += '</tbody></table>';
+  }
+
+  el.style.display='block';
+  el.innerHTML = html;
+}
+
 function render(){
   var occ = occupancyMap();
   var html = '<thead><tr><th class="corner"></th>';
@@ -318,9 +388,13 @@ function render(){
         var bw = b.borderwidth || '2';
         var bs = b.borderstyle || 'solid';
         var bc = b.bordercolor || '#1a202c';
+        var isHighlighted = searchedLot && b.type!=='libre' && b.lot===searchedLot;
         var cellStyle = 'background:'+b.color+'55;color:'+darken(b.color)+
           ';font-size:'+fs+'px;font-weight:'+fw+';text-align:'+ta+
           ';border:'+bw+'px '+bs+' '+bc;
+        if(isHighlighted){
+          cellStyle += ';outline:3px solid #e63946;outline-offset:-1px;box-shadow:0 0 0 3px #e6394655';
+        }
         var spanAttr, innerHtml;
         if(isVertical){
           var span = cells.length;
