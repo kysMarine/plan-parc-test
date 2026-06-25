@@ -531,10 +531,14 @@ function render(){
 
 function renderInner(){
   var occ = occupancyMap();
-  var html = '<thead><tr><th class="corner"></th>';
+  var html = '<colgroup><col style="width:36px">';
+  for(var ci=0;ci<ncols;ci++){
+    html += '<col style="width:'+(colWidths[ci]||26)+'px">';
+  }
+  html += '</colgroup>';
+  html += '<thead><tr><th class="corner"></th>';
   for(var c=0;c<ncols;c++){
-    var cw = colWidths[c] || 26;
-    html += '<th class="colhead" style="width:'+cw+'px" oncontextmenu="openColCtx(event,'+c+')">'+(c+1)+'</th>';
+    html += '<th class="colhead" oncontextmenu="openColCtx(event,'+c+')">'+(c+1)+'</th>';
   }
   html += '</tr></thead><tbody>';
 
@@ -545,7 +549,7 @@ function renderInner(){
     while(c2 < ncols){
       var bi = occ[r+'_'+c2];
       if(bi === undefined){
-        html += '<td class="cell" style="width:'+(colWidths[c2]||26)+'px;height:'+rh+'px" onclick="openNew('+r+','+c2+')"></td>';
+        html += '<td class="cell" onclick="openNew('+r+','+c2+')"></td>';
         c2++;
       } else {
         var b = blocks[bi];
