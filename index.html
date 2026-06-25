@@ -69,6 +69,10 @@
     <input type="number" id="nrows" value="20" min="1">
     <button class="btn btn-primary" onclick="applyGridSize()">Appliquer</button>
     <span style="flex:1"></span>
+    <button class="btn" onclick="zoomOut()" title="Zoom arriere">−</button>
+    <span id="zoomLabel" style="font-size:.8rem;color:#718096;min-width:36px;text-align:center">100%</span>
+    <button class="btn" onclick="zoomIn()" title="Zoom avant">+</button>
+    <button class="btn" onclick="zoomReset()" title="Reinitialiser le zoom">100%</button>
     <button class="btn" id="undoBtn" onclick="undo()" title="Annuler (Ctrl+Z)">Annuler</button>
     <button class="btn" id="redoBtn" onclick="redo()" title="Retablir (Ctrl+Y)">Retablir</button>
     <button class="btn btn-danger" onclick="resetAll()">Tout effacer</button>
@@ -221,6 +225,7 @@ var selDir = 'right';
 var colWidths = {};
 var rowHeights = {};
 var ctxTarget = null;
+var zoomFactor = 1;
 
 var stateHistory = [];
 var historyIndex = -1;
@@ -341,6 +346,23 @@ function deleteRow(r){
   saveState();
   render();
 }
+
+function getColW(c){
+  return Math.round((colWidths[c] || 26) * zoomFactor);
+}
+function getRowH(r){
+  return Math.round((rowHeights[r] || 26) * zoomFactor);
+}
+
+function applyZoom(newZoom){
+  zoomFactor = Math.max(0.4, Math.min(2.5, newZoom));
+  document.getElementById('zoomLabel').textContent = Math.round(zoomFactor*100)+'%';
+  render();
+}
+
+function zoomIn(){ applyZoom(zoomFactor + 0.1); }
+function zoomOut(){ applyZoom(zoomFactor - 0.1); }
+function zoomReset(){ applyZoom(1); }
 
 function cellsOfBlock(b){
   if(!b) return [];
@@ -533,7 +555,7 @@ function renderInner(){
   var occ = occupancyMap();
   var html = '<colgroup><col style="width:36px">';
   for(var ci=0;ci<ncols;ci++){
-    html += '<col style="width:'+(colWidths[ci]||26)+'px">';
+    html += '<col style="width:'+getColW(ci)+'px">';
   }
   html += '</colgroup>';
   html += '<thead><tr><th class="corner"></th>';
@@ -543,7 +565,7 @@ function renderInner(){
   html += '</tr></thead><tbody>';
 
   for(var r=0;r<nrows;r++){
-    var rh = rowHeights[r] || 26;
+    var rh = getRowH(r);
     html += '<tr style="height:'+rh+'px"><th class="rowhead" oncontextmenu="openRowCtx(event,'+r+')">L'+(r+1)+' <span class="rowdel" onclick="deleteRow('+r+')" title="Supprimer">x</span></th>';
     var c2 = 0;
     while(c2 < ncols){
@@ -597,9 +619,9 @@ function renderInner(){
           var totalHeight = 0;
           for(var hi=0; hi<span; hi++){
             var rr = (b.dir==='down') ? (b.row+hi) : (b.row-hi);
-            totalHeight += (rowHeights[rr] || 26);
+            totalHeight += getRowH(rr);
           }
-          var colW = colWidths[b.col] || 26;
+          var colW = getColW(b.col);
           sizeStyle = 'width:'+colW+'px;max-width:'+colW+'px;height:'+totalHeight+'px;max-height:'+totalHeight+'px';
           cellStyle += ';padding:4px 2px;'+sizeStyle;
           innerHtml = '<div style="writing-mode:vertical-rl;text-orientation:mixed;height:100%;width:100%;display:flex;align-items:center;justify-content:'+(ta==='left'?'flex-start':ta==='right'?'flex-end':'center')+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+label+'</div>';
@@ -607,9 +629,9 @@ function renderInner(){
           spanAttr = 'colspan="'+cells.length+'"';
           var totalWidth = 0;
           for(var wi=0; wi<cells.length; wi++){
-            totalWidth += (colWidths[cells[wi][1]] || 26);
+            totalWidth += getColW(cells[wi][1]);
           }
-          var rowH = rowHeights[r] || 26;
+          var rowH = getRowH(r);
           sizeStyle = 'width:'+totalWidth+'px;max-width:'+totalWidth+'px;height:'+rowH+'px;max-height:'+rowH+'px';
           cellStyle += ';'+sizeStyle;
           innerHtml = label;
@@ -1002,6 +1024,19 @@ document.addEventListener('keydown', function(e){
   } else if((e.ctrlKey||e.metaKey) && (e.key==='y' || (e.shiftKey&&e.key==='Z'))){
     e.preventDefault();
     redo();
+  }
+});
+
+document.addEventListener('DOMContentLoaded', function(){
+  var gridWrap = document.querySelector('.grid-wrap');
+  if(gridWrap){
+    gridWrap.addEventListener('wheel', function(e){
+      if(e.ctrlKey || e.metaKey){
+        e.preventDefault();
+        if(e.deltaY < 0) zoomIn();
+        else zoomOut();
+      }
+    }, {passive:false});
   }
 });
 
