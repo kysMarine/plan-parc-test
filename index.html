@@ -73,8 +73,9 @@
     <button class="btn" id="redoBtn" onclick="redo()" title="Retablir (Ctrl+Y)">Retablir</button>
     <button class="btn btn-danger" onclick="resetAll()">Tout effacer</button>
     <button class="btn" onclick="exportJSON()">Exporter</button>
-    <button class="btn" onclick="document.getElementById('importFile').click()">Importer</button>
+    <button class="btn" onclick="document.getElementById('importFile').click()">Importer JSON</button>
     <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
+    <button class="btn btn-primary" onclick="openSheetImport()">Importer Google Sheet</button>
   </div>
 
   <div class="legend">Cliquez sur une case vide pour creer un bloc, choisissez la direction de remplissage. Cliquez sur un bloc existant pour le modifier ou le supprimer.</div>
@@ -179,6 +180,29 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<div class="overlay" id="sheetImportOverlay">
+  <div class="modal" style="max-width:420px">
+    <p class="title">Importer depuis Google Sheet</p>
+    <div class="field">
+      <label>Lien ou ID de la feuille Google Sheet</label>
+      <input type="text" id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/...">
+    </div>
+    <div class="field">
+      <label>Lieu / Parc associe</label>
+      <input type="text" id="sheetLieu" placeholder="ex: Carnac">
+    </div>
+    <div class="field">
+      <label>Rangee de depart sur la grille</label>
+      <input type="number" id="sheetRowOffset" min="0" value="0">
+    </div>
+    <div id="sheetImportStatus" style="font-size:.8rem;color:#718096;margin-bottom:8px"></div>
+    <div class="modalbtns">
+      <button class="btn btn-primary" onclick="runSheetImport()">Importer</button>
+      <button class="btn" onclick="closeSheetImport()">Annuler</button>
+    </div>
+  </div>
+</div>
 
 <div id="ctxMenu" style="display:none;position:fixed;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.15);padding:.6rem;z-index:400;font-size:.82rem">
   <div id="ctxLabel" style="font-weight:600;margin-bottom:6px"></div>
@@ -569,7 +593,7 @@ function renderInner(){
           var span = cells.length;
           spanAttr = 'rowspan="'+span+'"';
           cellStyle += ';padding:4px 2px';
-          innerHtml = '<div style="writing-mode:vertical-rl;text-orientation:mixed;height:100%;display:flex;align-items:center;justify-content:'+(ta==='left'?'flex-start':ta==='right'?'flex-end':'center')+'">'+label+'</div>';
+          innerHtml = '<div style="writing-mode:vertical-rl;text-orientation:mixed;height:100%;width:100%;display:flex;align-items:center;justify-content:'+(ta==='left'?'flex-start':ta==='right'?'flex-end':'center')+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+label+'</div>';
         } else {
           spanAttr = 'colspan="'+cells.length+'"';
           innerHtml = label;
@@ -733,6 +757,148 @@ function exportJSON(){
   a.click();
   URL.revokeObjectURL(url);
   showToast('Export telecharge');
+}
+
+// ─── IMPORT GOOGLE SHEET ───
+var SHEETS_API_KEY = 'AIzaSyC3uvsTue-0hlzKUYC9emPnOoCkIhA7N5s';
+var COLORS_CYCLE_IDX = 0;
+
+function openSheetImport(){
+  document.getElementById('sheetUrl').value = '';
+  document.getElementById('sheetLieu').value = '';
+  document.getElementById('sheetRowOffset').value = '0';
+  document.getElementById('sheetImportStatus').textContent = '';
+  document.getElementById('sheetImportOverlay').classList.add('open');
+}
+
+function closeSheetImport(){
+  document.getElementById('sheetImportOverlay').classList.remove('open');
+}
+
+function extractSheetId(input){
+  var m = input.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if(m) return m[1];
+  if(/^[a-zA-Z0-9_-]{20,}$/.test(input.trim())) return input.trim();
+  return null;
+}
+
+function parseSheetCell(cell){
+  if(!cell || typeof cell !== 'string') return null;
+  var dateMatch = cell.match(/(\d{2})\/(\d{2})\/(\d{2,4})/);
+  var pochesMatch = cell.match(/^\s*(\d+)\s*p\b/i);
+  if(!pochesMatch) return null;
+  var poches = parseInt(pochesMatch[1]);
+  if(!poches) return null;
+
+  var gramMatch = cell.match(/\b(\d+)\s*g\b/i);
+  var calibreMatch = !gramMatch ? cell.match(/\b(K[1-5](?:[/-]K[1-5])?|En[1-4]|F[1-4])\b/i) : null;
+  var gram = gramMatch ? gramMatch[1] : (calibreMatch ? calibreMatch[1] : '');
+
+  var poidsMatch = cell.match(/(\d+[,.]\d+|\d+)\s*kg/i);
+  var poids = poidsMatch ? poidsMatch[1].replace(',','.') : '';
+
+  var lotMatch = cell.match(/\b(\d{1,3}[A-Z]\d{2}[A-Z]{0,2})\b/i);
+  var lot = lotMatch ? lotMatch[1] : '';
+  if(!lot){
+    var wordsMatch = cell.match(/\b[A-Za-zÀ-ÿ]{3,}\b/g) || [];
+    var stopWords = ['kg','kgp','piquet','attention','acces','tracteur','ne','pas','sortir','par','le','haut','des','files'];
+    var candidate = wordsMatch.find(function(w){ return stopWords.indexOf(w.toLowerCase())===-1; });
+    lot = candidate || '';
+  }
+
+  var dateIso = '';
+  if(dateMatch){
+    var yyyy = dateMatch[3].length===2 ? '20'+dateMatch[3] : dateMatch[3];
+    dateIso = yyyy+'-'+dateMatch[2]+'-'+dateMatch[1];
+  }
+
+  return {poches:poches, gram:gram, poids:poids, lot:lot, date:dateIso};
+}
+
+function runSheetImport(){
+  var urlInput = document.getElementById('sheetUrl').value.trim();
+  var lieu = document.getElementById('sheetLieu').value.trim();
+  var rowOffset = parseInt(document.getElementById('sheetRowOffset').value)||0;
+  var statusEl = document.getElementById('sheetImportStatus');
+
+  var sheetId = extractSheetId(urlInput);
+  if(!sheetId){
+    statusEl.textContent = 'Lien ou ID invalide.';
+    statusEl.style.color = '#e24b4a';
+    return;
+  }
+
+  statusEl.style.color = '#718096';
+  statusEl.textContent = 'Chargement des donnees...';
+
+  var apiUrl = 'https://sheets.googleapis.com/v4/spreadsheets/'+sheetId+'/values/A1:ZZ500?key='+SHEETS_API_KEY;
+
+  fetch(apiUrl).then(function(resp){
+    if(!resp.ok) throw new Error('Erreur API ('+resp.status+'). Verifiez que la feuille est partagee en lecture.');
+    return resp.json();
+  }).then(function(data){
+    var rows = data.values || [];
+    var newBlocks = [];
+    var maxNeededRow = 0, maxNeededCol = 0;
+
+    rows.forEach(function(row, rowIdx){
+      var occupiedUntil = -1;
+      row.forEach(function(cell, colIdx){
+        if(colIdx <= occupiedUntil) return;
+        var parsed = parseSheetCell(cell);
+        if(!parsed) return;
+
+        var gridRow = rowOffset + rowIdx;
+        var gridCol = colIdx;
+        var span = Math.max(1, Math.ceil(parsed.poches/ppc));
+
+        newBlocks.push({
+          row: gridRow,
+          col: gridCol,
+          dir: 'right',
+          type: 'lot',
+          lot: parsed.lot,
+          poches: parsed.poches,
+          gram: parsed.gram,
+          poids: parsed.poids,
+          date: parsed.date,
+          notes: lieu ? ('Importe depuis Google Sheet - '+lieu) : 'Importe depuis Google Sheet',
+          color: COLORS[COLORS_CYCLE_IDX % COLORS.length],
+          fontsize: '12',
+          fontweight: '700',
+          textalign: 'center',
+          borderwidth: '2',
+          borderstyle: 'double',
+          bordercolor: '#1a202c'
+        });
+        COLORS_CYCLE_IDX++;
+
+        occupiedUntil = colIdx; // cellule consommee, on avance normalement (col par col du Sheet)
+        maxNeededRow = Math.max(maxNeededRow, gridRow+1);
+        maxNeededCol = Math.max(maxNeededCol, gridCol+span);
+      });
+    });
+
+    if(!newBlocks.length){
+      statusEl.style.color = '#e24b4a';
+      statusEl.textContent = 'Aucun bloc detecte dans cette feuille.';
+      return;
+    }
+
+    if(maxNeededRow > nrows) nrows = maxNeededRow;
+    if(maxNeededCol > ncols) ncols = maxNeededCol;
+    document.getElementById('nrows').value = nrows;
+    document.getElementById('ncols').value = ncols;
+
+    blocks = blocks.concat(newBlocks);
+    saveState();
+    render();
+    closeSheetImport();
+    showToast(newBlocks.length+' blocs importes depuis Google Sheet');
+  }).catch(function(err){
+    statusEl.style.color = '#e24b4a';
+    statusEl.textContent = err.message;
+  });
 }
 
 function importJSON(event){
