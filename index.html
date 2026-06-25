@@ -288,6 +288,17 @@ function formatDateShort(isoDate){
   return parts[2]+'/'+parts[1]+'/'+parts[0].slice(2);
 }
 
+function formatGram(val){
+  if(!val) return '';
+  var v = String(val).trim();
+  // Si c'est uniquement un nombre (entier ou decimal), on ajoute "g"
+  if(/^\d+([.,]\d+)?$/.test(v)){
+    return escapeHtml(v)+'g';
+  }
+  // Sinon (K1, K2, F3, En1...) on laisse tel quel
+  return escapeHtml(v);
+}
+
 function todayISO(){
   var d = new Date();
   var mm = String(d.getMonth()+1).padStart(2,'0');
@@ -320,6 +331,24 @@ function toggleDetail(){
   renderSearchResult();
 }
 
+var sortColumn = null;
+var sortAsc = true;
+
+function sortDetailBy(col){
+  if(sortColumn === col){
+    sortAsc = !sortAsc;
+  } else {
+    sortColumn = col;
+    sortAsc = true;
+  }
+  renderSearchResult();
+}
+
+function sortArrow(col){
+  if(sortColumn !== col) return '<span style="color:#cbd5e0">⇕</span>';
+  return sortAsc ? '<span style="color:#0ea5e9">▲</span>' : '<span style="color:#0ea5e9">▼</span>';
+}
+
 function renderSearchResult(){
   var el = document.getElementById('searchResult');
   if(!searchedLot){ el.style.display='none'; return; }
@@ -345,23 +374,41 @@ function renderSearchResult(){
       if(!groups[key]) groups[key] = {gram:b.gram||'—', poids:b.poids||'', date:b.date||'', poches:0};
       groups[key].poches += parseInt(b.poches)||0;
     });
+    var rows = Object.values(groups).map(function(g){
+      var poidsUnitaire = parseFloat(g.poids)||0;
+      g.poidsTotal = poidsUnitaire ? +(poidsUnitaire * g.poches).toFixed(1) : 0;
+      return g;
+    });
+
+    if(sortColumn){
+      rows.sort(function(a,b){
+        var va, vb;
+        if(sortColumn==='gram'){ va=a.gram; vb=b.gram; }
+        else if(sortColumn==='poches'){ va=a.poches; vb=b.poches; }
+        else if(sortColumn==='poidsTotal'){ va=a.poidsTotal; vb=b.poidsTotal; }
+        else if(sortColumn==='date'){ va=a.date||''; vb=b.date||''; }
+        if(typeof va === 'string'){
+          var cmp = va.localeCompare(vb, 'fr', {numeric:true});
+          return sortAsc ? cmp : -cmp;
+        }
+        return sortAsc ? va-vb : vb-va;
+      });
+    }
+
     html += '<table style="width:100%;border-collapse:collapse;margin-top:10px;font-size:.82rem">';
     html += '<thead><tr style="background:#f8f9fa">'+
-      '<th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Grammage / Reference</th>'+
-      '<th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Poches</th>'+
+      '<th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;cursor:pointer" onclick="sortDetailBy(\'gram\')">Grammage / Reference '+sortArrow('gram')+'</th>'+
+      '<th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;cursor:pointer" onclick="sortDetailBy(\'poches\')">Poches '+sortArrow('poches')+'</th>'+
       '<th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Poids/p</th>'+
-      '<th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Poids total</th>'+
-      '<th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Date</th>'+
+      '<th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;cursor:pointer" onclick="sortDetailBy(\'poidsTotal\')">Poids total '+sortArrow('poidsTotal')+'</th>'+
+      '<th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;cursor:pointer" onclick="sortDetailBy(\'date\')">Date '+sortArrow('date')+'</th>'+
       '</tr></thead><tbody>';
-    Object.keys(groups).sort().forEach(function(k){
-      var g = groups[k];
-      var poidsUnitaire = parseFloat(g.poids)||0;
-      var poidsTotal = poidsUnitaire ? (poidsUnitaire * g.poches).toFixed(1) : '';
+    rows.forEach(function(g){
       html += '<tr>'+
-        '<td style="padding:6px 8px;border-bottom:1px solid #edf0f3">'+escapeHtml(g.gram)+'</td>'+
+        '<td style="padding:6px 8px;border-bottom:1px solid #edf0f3">'+formatGram(g.gram==='—'?'':g.gram)+(g.gram==='—'?'—':'')+'</td>'+
         '<td style="padding:6px 8px;border-bottom:1px solid #edf0f3;font-weight:600">'+g.poches+'p</td>'+
         '<td style="padding:6px 8px;border-bottom:1px solid #edf0f3">'+(g.poids?g.poids+'kg':'—')+'</td>'+
-        '<td style="padding:6px 8px;border-bottom:1px solid #edf0f3;font-weight:600">'+(poidsTotal?poidsTotal+'kg':'—')+'</td>'+
+        '<td style="padding:6px 8px;border-bottom:1px solid #edf0f3;font-weight:600">'+(g.poidsTotal?g.poidsTotal+'kg':'—')+'</td>'+
         '<td style="padding:6px 8px;border-bottom:1px solid #edf0f3">'+(g.date?formatDateShort(g.date):'—')+'</td>'+
         '</tr>';
     });
@@ -404,14 +451,14 @@ function render(){
           label = escapeHtml(b.libretext||'');
           tipParts = [escapeHtml(b.libretext||'')];
         } else {
-          var labelParts = [];
-          labelParts.push(b.poches+'p');
-          if(b.gram) labelParts.push(escapeHtml(b.gram));
-          if(b.lot) labelParts.push(escapeHtml(b.lot));
-          if(b.poids) labelParts.push(b.poids+'kg');
-          if(b.date) labelParts.push(formatDateShort(b.date));
-          label = labelParts.join(' ');
-          tipParts = labelParts;
+          var part1 = b.poches+'p'+(b.gram?' '+formatGram(b.gram):'')+(b.lot?' '+escapeHtml(b.lot):'');
+          var part2 = b.poids ? b.poids+'kg' : '';
+          var part3 = b.date ? formatDateShort(b.date) : '';
+          var labelParts = [part1];
+          if(part2) labelParts.push(part2);
+          if(part3) labelParts.push(part3);
+          label = labelParts.join(' - ');
+          tipParts = labelParts.slice();
           if(b.notes) tipParts.push(escapeHtml(b.notes));
         }
         var fs = b.fontsize || '12';
