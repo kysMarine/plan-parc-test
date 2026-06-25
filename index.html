@@ -200,7 +200,7 @@ var colWidths = {};
 var rowHeights = {};
 var ctxTarget = null;
 
-var history = [];
+var stateHistory = [];
 var historyIndex = -1;
 var MAX_HISTORY = 50;
 
@@ -248,37 +248,40 @@ function snapshot(){
 
 function pushHistory(){
   var snap = snapshot();
-  if(historyIndex>=0 && history[historyIndex]===snap) return;
-  history = history.slice(0, historyIndex+1);
-  history.push(snap);
-  if(history.length>MAX_HISTORY) history.shift();
-  historyIndex = history.length-1;
+  if(historyIndex>=0 && stateHistory[historyIndex]===snap) return;
+  stateHistory = stateHistory.slice(0, historyIndex+1);
+  stateHistory.push(snap);
+  if(stateHistory.length>MAX_HISTORY) stateHistory.shift();
+  historyIndex = stateHistory.length-1;
   updateUndoRedoButtons();
 }
 
 function applySnapshot(snap){
-  var data = JSON.parse(snap);
-  ppc = data.ppc; ncols = data.ncols; nrows = data.nrows;
-  blocks = data.blocks; colWidths = data.colWidths||{}; rowHeights = data.rowHeights||{};
-  document.getElementById('ppc').value = ppc;
-  document.getElementById('ncols').value = ncols;
-  document.getElementById('nrows').value = nrows;
-  try{ localStorage.setItem(STORAGE_KEY, snap); }catch(e){}
-  render();
+  if(!snap) return;
+  try{
+    var data = JSON.parse(snap);
+    ppc = data.ppc; ncols = data.ncols; nrows = data.nrows;
+    blocks = data.blocks; colWidths = data.colWidths||{}; rowHeights = data.rowHeights||{};
+    document.getElementById('ppc').value = ppc;
+    document.getElementById('ncols').value = ncols;
+    document.getElementById('nrows').value = nrows;
+    localStorage.setItem(STORAGE_KEY, snap);
+    render();
+  }catch(e){ console.error('Erreur applySnapshot', e); }
 }
 
 function undo(){
   if(historyIndex<=0) return;
   historyIndex--;
-  applySnapshot(history[historyIndex]);
+  applySnapshot(stateHistory[historyIndex]);
   updateUndoRedoButtons();
   showToast('Annule');
 }
 
 function redo(){
-  if(historyIndex>=history.length-1) return;
+  if(historyIndex>=stateHistory.length-1) return;
   historyIndex++;
-  applySnapshot(history[historyIndex]);
+  applySnapshot(stateHistory[historyIndex]);
   updateUndoRedoButtons();
   showToast('Retabli');
 }
@@ -287,7 +290,7 @@ function updateUndoRedoButtons(){
   var u = document.getElementById('undoBtn');
   var r = document.getElementById('redoBtn');
   if(u) u.disabled = historyIndex<=0;
-  if(r) r.disabled = historyIndex>=history.length-1;
+  if(r) r.disabled = historyIndex>=stateHistory.length-1;
 }
 
 function showToast(msg){
@@ -299,8 +302,10 @@ function showToast(msg){
 
 function applyGridSize(){
   ppc = parseInt(document.getElementById('ppc').value)||10;
-  ncols = parseInt(document.getElementById('ncols').value)||60;
-  nrows = parseInt(document.getElementById('nrows').value)||20;
+  ncols = Math.min(parseInt(document.getElementById('ncols').value)||60, 300);
+  nrows = Math.min(parseInt(document.getElementById('nrows').value)||20, 200);
+  document.getElementById('ncols').value = ncols;
+  document.getElementById('nrows').value = nrows;
   saveState();
   render();
 }
@@ -316,7 +321,9 @@ function deleteRow(r){
 }
 
 function cellsOfBlock(b){
-  var span = b.type==='libre' ? Math.max(1, b.nbcases||1) : Math.max(1, Math.ceil(b.poches/ppc));
+  if(!b) return [];
+  var span = b.type==='libre' ? Math.max(1, b.nbcases||1) : Math.max(1, Math.ceil((b.poches||1)/ppc));
+  span = Math.min(span, 500); // garde-fou anti-boucle-infinie
   var cells = [];
   for(var i=0;i<span;i++){
     var r=b.row, c=b.col;
@@ -491,6 +498,16 @@ function renderSearchResult(){
 }
 
 function render(){
+  try{
+    renderInner();
+  }catch(e){
+    console.error('Erreur de rendu', e);
+    var el = document.getElementById('gridTable');
+    if(el) el.outerHTML = '<div style="padding:2rem;text-align:center;color:#e24b4a">Erreur d\'affichage : '+escapeHtml(e.message)+'<br><br><button class="btn btn-danger" onclick="resetAll()">Reinitialiser le plan</button></div>';
+  }
+}
+
+function renderInner(){
   var occ = occupancyMap();
   var html = '<thead><tr><th class="corner"></th>';
   for(var c=0;c<ncols;c++){
