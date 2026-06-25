@@ -21,14 +21,14 @@
   .btn-danger{color:#e24b4a;border-color:#e24b4a}
   .btn-danger:hover{background:#fff5f5}
   .grid-wrap{overflow:auto;border:1px solid #e2e8f0;border-radius:12px;background:#fff;max-height:75vh}
-  table.grid{border-collapse:collapse}
-  table.grid td, table.grid th{border:1px solid #edf0f3;padding:0;text-align:center}
-  table.grid th.colhead{font-size:.65rem;color:#a0aec0;font-weight:500;min-width:26px;width:26px;height:20px;background:#fafbfc;position:sticky;top:0;z-index:2}
-  table.grid th.rowhead{font-size:.7rem;color:#718096;font-weight:600;width:34px;background:#fafbfc;position:sticky;left:0;z-index:2}
+  table.grid{border-collapse:collapse;table-layout:fixed}
+  table.grid td, table.grid th{border:1px solid #edf0f3;padding:0;text-align:center;overflow:hidden}
+  table.grid th.colhead{font-size:.65rem;color:#a0aec0;font-weight:500;height:20px;background:#fafbfc;position:sticky;top:0;z-index:2;cursor:context-menu}
+  table.grid th.rowhead{font-size:.7rem;color:#718096;font-weight:600;width:34px;background:#fafbfc;position:sticky;left:0;z-index:2;cursor:context-menu}
   table.grid th.corner{position:sticky;top:0;left:0;z-index:3;background:#fafbfc}
-  td.cell{width:26px;height:26px;cursor:pointer;background:#fff}
+  td.cell{height:26px;cursor:pointer;background:#fff}
   td.cell:hover{background:#f0f9ff}
-  td.blockcell{font-size:.62rem;font-weight:600;line-height:1.1;padding:1px;overflow:hidden;white-space:nowrap}
+  td.blockcell{font-size:.62rem;font-weight:600;line-height:1.1;padding:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
   .rowdel{font-size:.65rem;color:#cbd5e0;cursor:pointer;padding:0 3px}
   .rowdel:hover{color:#e24b4a}
   .legend{font-size:.78rem;color:#a0aec0;margin-bottom:.75rem}
@@ -69,6 +69,8 @@
     <input type="number" id="nrows" value="20" min="1">
     <button class="btn btn-primary" onclick="applyGridSize()">Appliquer</button>
     <span style="flex:1"></span>
+    <button class="btn" id="undoBtn" onclick="undo()" title="Annuler (Ctrl+Z)">Annuler</button>
+    <button class="btn" id="redoBtn" onclick="redo()" title="Retablir (Ctrl+Y)">Retablir</button>
     <button class="btn btn-danger" onclick="resetAll()">Tout effacer</button>
     <button class="btn" onclick="exportJSON()">Exporter</button>
     <button class="btn" onclick="document.getElementById('importFile').click()">Importer</button>
@@ -178,12 +180,29 @@
 
 <div class="toast" id="toast"></div>
 
+<div id="ctxMenu" style="display:none;position:fixed;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.15);padding:.6rem;z-index:400;font-size:.82rem">
+  <div id="ctxLabel" style="font-weight:600;margin-bottom:6px"></div>
+  <div style="display:flex;gap:6px;align-items:center">
+    <input type="number" id="ctxSize" min="10" style="width:70px;padding:.3rem .4rem;border:1px solid #e2e8f0;border-radius:6px">
+    <span id="ctxUnit" style="color:#718096">px</span>
+    <button class="btn btn-primary" onclick="applyCtxSize()" style="padding:.3rem .6rem">OK</button>
+  </div>
+  <button class="btn" onclick="resetCtxSize()" style="margin-top:6px;width:100%">Reinitialiser la taille</button>
+</div>
+
 <script>
 var STORAGE_KEY = 'plan_parc_test_v2';
 var ppc = 10, ncols = 60, nrows = 20;
 var blocks = [];
 var editing = null;
 var selDir = 'right';
+var colWidths = {};
+var rowHeights = {};
+var ctxTarget = null;
+
+var history = [];
+var historyIndex = -1;
+var MAX_HISTORY = 50;
 
 var COLORS = ['#FAC775','#85B7EB','#F0997B','#97C459','#ED93B1','#AFA9EC','#B4B2A9','#5DCAA5'];
 var selColor = COLORS[0];
@@ -206,17 +225,69 @@ function loadState(){
       ncols = data.ncols || 60;
       nrows = data.nrows || 20;
       blocks = data.blocks || [];
+      colWidths = data.colWidths || {};
+      rowHeights = data.rowHeights || {};
     }
   }catch(e){ console.error('Erreur chargement', e); }
   document.getElementById('ppc').value = ppc;
   document.getElementById('ncols').value = ncols;
   document.getElementById('nrows').value = nrows;
+  pushHistory();
 }
 
-function saveState(){
+function saveState(skipHistory){
   try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ppc:ppc, ncols:ncols, nrows:nrows, blocks:blocks}));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ppc:ppc, ncols:ncols, nrows:nrows, blocks:blocks, colWidths:colWidths, rowHeights:rowHeights}));
   }catch(e){ console.error('Erreur sauvegarde', e); }
+  if(!skipHistory) pushHistory();
+}
+
+function snapshot(){
+  return JSON.stringify({ppc:ppc, ncols:ncols, nrows:nrows, blocks:blocks, colWidths:colWidths, rowHeights:rowHeights});
+}
+
+function pushHistory(){
+  var snap = snapshot();
+  if(historyIndex>=0 && history[historyIndex]===snap) return;
+  history = history.slice(0, historyIndex+1);
+  history.push(snap);
+  if(history.length>MAX_HISTORY) history.shift();
+  historyIndex = history.length-1;
+  updateUndoRedoButtons();
+}
+
+function applySnapshot(snap){
+  var data = JSON.parse(snap);
+  ppc = data.ppc; ncols = data.ncols; nrows = data.nrows;
+  blocks = data.blocks; colWidths = data.colWidths||{}; rowHeights = data.rowHeights||{};
+  document.getElementById('ppc').value = ppc;
+  document.getElementById('ncols').value = ncols;
+  document.getElementById('nrows').value = nrows;
+  try{ localStorage.setItem(STORAGE_KEY, snap); }catch(e){}
+  render();
+}
+
+function undo(){
+  if(historyIndex<=0) return;
+  historyIndex--;
+  applySnapshot(history[historyIndex]);
+  updateUndoRedoButtons();
+  showToast('Annule');
+}
+
+function redo(){
+  if(historyIndex>=history.length-1) return;
+  historyIndex++;
+  applySnapshot(history[historyIndex]);
+  updateUndoRedoButtons();
+  showToast('Retabli');
+}
+
+function updateUndoRedoButtons(){
+  var u = document.getElementById('undoBtn');
+  var r = document.getElementById('redoBtn');
+  if(u) u.disabled = historyIndex<=0;
+  if(r) r.disabled = historyIndex>=history.length-1;
 }
 
 function showToast(msg){
@@ -423,17 +494,19 @@ function render(){
   var occ = occupancyMap();
   var html = '<thead><tr><th class="corner"></th>';
   for(var c=0;c<ncols;c++){
-    html += '<th class="colhead">'+(c+1)+'</th>';
+    var cw = colWidths[c] || 26;
+    html += '<th class="colhead" style="width:'+cw+'px" oncontextmenu="openColCtx(event,'+c+')">'+(c+1)+'</th>';
   }
   html += '</tr></thead><tbody>';
 
   for(var r=0;r<nrows;r++){
-    html += '<tr><th class="rowhead">L'+(r+1)+' <span class="rowdel" onclick="deleteRow('+r+')" title="Supprimer">x</span></th>';
+    var rh = rowHeights[r] || 26;
+    html += '<tr style="height:'+rh+'px"><th class="rowhead" oncontextmenu="openRowCtx(event,'+r+')">L'+(r+1)+' <span class="rowdel" onclick="deleteRow('+r+')" title="Supprimer">x</span></th>';
     var c2 = 0;
     while(c2 < ncols){
       var bi = occ[r+'_'+c2];
       if(bi === undefined){
-        html += '<td class="cell" onclick="openNew('+r+','+c2+')"></td>';
+        html += '<td class="cell" style="width:'+(colWidths[c2]||26)+'px;height:'+rh+'px" onclick="openNew('+r+','+c2+')"></td>';
         c2++;
       } else {
         var b = blocks[bi];
@@ -669,6 +742,69 @@ function importJSON(event){
   reader.readAsText(file);
   event.target.value = '';
 }
+
+function openColCtx(e, colIdx){
+  e.preventDefault();
+  ctxTarget = {type:'col', idx:colIdx};
+  document.getElementById('ctxLabel').textContent = 'Largeur colonne '+(colIdx+1);
+  document.getElementById('ctxUnit').textContent = 'px (largeur)';
+  document.getElementById('ctxSize').value = colWidths[colIdx] || 26;
+  showCtxMenu(e.clientX, e.clientY);
+}
+
+function openRowCtx(e, rowIdx){
+  e.preventDefault();
+  ctxTarget = {type:'row', idx:rowIdx};
+  document.getElementById('ctxLabel').textContent = 'Hauteur rangee L'+(rowIdx+1);
+  document.getElementById('ctxUnit').textContent = 'px (hauteur)';
+  document.getElementById('ctxSize').value = rowHeights[rowIdx] || 26;
+  showCtxMenu(e.clientX, e.clientY);
+}
+
+function showCtxMenu(x, y){
+  var menu = document.getElementById('ctxMenu');
+  menu.style.display = 'block';
+  var maxX = window.innerWidth - 200;
+  var maxY = window.innerHeight - 140;
+  menu.style.left = Math.min(x, maxX)+'px';
+  menu.style.top = Math.min(y, maxY)+'px';
+}
+
+function applyCtxSize(){
+  if(!ctxTarget) return;
+  var val = parseInt(document.getElementById('ctxSize').value)||26;
+  if(ctxTarget.type==='col') colWidths[ctxTarget.idx] = val;
+  else rowHeights[ctxTarget.idx] = val;
+  document.getElementById('ctxMenu').style.display='none';
+  saveState();
+  render();
+}
+
+function resetCtxSize(){
+  if(!ctxTarget) return;
+  if(ctxTarget.type==='col') delete colWidths[ctxTarget.idx];
+  else delete rowHeights[ctxTarget.idx];
+  document.getElementById('ctxMenu').style.display='none';
+  saveState();
+  render();
+}
+
+document.addEventListener('click', function(e){
+  var menu = document.getElementById('ctxMenu');
+  if(menu && !menu.contains(e.target)){
+    menu.style.display = 'none';
+  }
+});
+
+document.addEventListener('keydown', function(e){
+  if((e.ctrlKey||e.metaKey) && e.key==='z'){
+    e.preventDefault();
+    undo();
+  } else if((e.ctrlKey||e.metaKey) && (e.key==='y' || (e.shiftKey&&e.key==='Z'))){
+    e.preventDefault();
+    redo();
+  }
+});
 
 loadState();
 render();
