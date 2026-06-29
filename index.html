@@ -21,14 +21,14 @@
   .btn-danger{color:#e24b4a;border-color:#e24b4a}
   .btn-danger:hover{background:#fff5f5}
   .grid-wrap{overflow:auto;border:1px solid #e2e8f0;border-radius:12px;background:#fff;max-height:75vh}
-  table.grid{border-collapse:collapse;table-layout:fixed}
-  table.grid td, table.grid th{border:1px solid #edf0f3;padding:0;text-align:center;overflow:hidden}
-  table.grid th.colhead{font-size:.65rem;color:#a0aec0;font-weight:500;height:20px;background:#fafbfc;position:sticky;top:0;z-index:2;cursor:context-menu}
+  table.grid{border-collapse:collapse;table-layout:fixed;width:0}
+  table.grid td, table.grid th{border:1px solid #edf0f3;padding:0;text-align:center;overflow:hidden;min-width:0;max-width:none;box-sizing:border-box}
+  table.grid th.colhead{font-size:.65rem;color:#a0aec0;font-weight:500;height:20px;background:#fafbfc;position:sticky;top:0;z-index:2;cursor:context-menu;overflow:hidden}
   table.grid th.rowhead{font-size:.7rem;color:#718096;font-weight:600;width:34px;background:#fafbfc;position:sticky;left:0;z-index:2;cursor:context-menu}
   table.grid th.corner{position:sticky;top:0;left:0;z-index:3;background:#fafbfc}
   td.cell{height:26px;cursor:pointer;background:#fff}
   td.cell:hover{background:#f0f9ff}
-  td.blockcell{font-size:.62rem;font-weight:600;line-height:1.1;padding:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  td.blockcell{font-size:.62rem;font-weight:600;line-height:1.1;padding:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;word-break:break-all}
   .rowdel{font-size:.65rem;color:#cbd5e0;cursor:pointer;padding:0 3px}
   .rowdel:hover{color:#e24b4a}
   .legend{font-size:.78rem;color:#a0aec0;margin-bottom:.75rem}
@@ -87,8 +87,14 @@
     <input type="text" id="searchLot" placeholder="ex: 02S25" style="width:150px" onkeydown="if(event.key==='Enter')searchLot()">
     <button class="btn btn-primary" onclick="searchLot()">Rechercher</button>
     <button class="btn" onclick="clearSearch()">Effacer</button>
+    <span style="flex:1"></span>
+    <button class="btn" onclick="calcVides()">Calculer les emplacements vides</button>
+    <button class="btn" onclick="calcRefWeight('K2')">Poids total K2</button>
+    <button class="btn" onclick="calcRefWeight('K3')">Poids total K3</button>
   </div>
   <div id="searchResult" style="display:none;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:.85rem 1rem;margin-bottom:1rem;font-size:.85rem"></div>
+  <div id="videResult" style="display:none;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:.85rem 1rem;margin-bottom:1rem;font-size:.85rem"></div>
+  <div id="refWeightResult" style="display:none;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:.85rem 1rem;margin-bottom:1rem;font-size:.85rem"></div>
 
   <div class="grid-wrap">
     <table class="grid" id="gridTable"></table>
@@ -430,6 +436,67 @@ function todayISO(){
 
 var searchedLot = null;
 var showDetail = false;
+
+function calcRefWeight(ref){
+  var matching = blocks.filter(function(b){
+    return b.type !== 'libre' && b.gram && String(b.gram).trim().toUpperCase() === ref.toUpperCase();
+  });
+  var el = document.getElementById('refWeightResult');
+  if(!matching.length){
+    el.style.display = 'block';
+    el.innerHTML = 'Aucune case '+escapeHtml(ref)+' trouvee sur le plan.';
+    return;
+  }
+
+  var totalPoches = 0, totalPoids = 0, sansPoids = 0;
+  var detail = matching.map(function(b){
+    var poches = parseInt(b.poches)||0;
+    var poidsUnitaire = parseFloat(b.poids)||0;
+    var poidsLigne = poidsUnitaire ? +(poches*poidsUnitaire).toFixed(1) : 0;
+    totalPoches += poches;
+    totalPoids += poidsLigne;
+    if(!poidsUnitaire) sansPoids += poches;
+    return {lot:b.lot||'—', poches:poches, poidsUnitaire:poidsUnitaire, poidsLigne:poidsLigne};
+  });
+
+  var html = '<div style="font-weight:600;margin-bottom:8px">'+escapeHtml(ref)+' — '+matching.length+' case'+(matching.length>1?'s':'')+' — '+totalPoches+' poches — <strong>'+totalPoids.toFixed(1)+' kg</strong> au total</div>';
+  if(sansPoids>0){
+    html += '<div style="color:#e24b4a;font-size:.78rem;margin-bottom:8px">'+sansPoids+' poches sans poids/p renseigne (non comptees dans le total)</div>';
+  }
+  html += '<table style="width:100%;border-collapse:collapse;font-size:.8rem">';
+  html += '<thead><tr style="background:#f8f9fa"><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Lot</th><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Poches</th><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Poids/p</th><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Poids ligne</th></tr></thead><tbody>';
+  detail.forEach(function(d){
+    html += '<tr><td style="padding:6px 8px;border-bottom:1px solid #edf0f3">'+escapeHtml(d.lot)+'</td><td style="padding:6px 8px;border-bottom:1px solid #edf0f3;font-weight:600">'+d.poches+'p</td><td style="padding:6px 8px;border-bottom:1px solid #edf0f3">'+(d.poidsUnitaire?d.poidsUnitaire+'kg':'—')+'</td><td style="padding:6px 8px;border-bottom:1px solid #edf0f3;font-weight:600">'+(d.poidsLigne?d.poidsLigne+'kg':'—')+'</td></tr>';
+  });
+  html += '</tbody></table>';
+
+  el.style.display = 'block';
+  el.innerHTML = html;
+}
+
+function isVideBlock(b){
+  // Detecte un emplacement "vide" : lot/grammage/texte libre contenant "v" isole
+  // ex: "50v", "v", "30 v" -> vide. Mais "K2" ou "02S25" -> pas vide.
+  var fields = [b.lot, b.gram, b.libretext];
+  return fields.some(function(f){
+    if(!f) return false;
+    var v = String(f).trim().toLowerCase();
+    return v === 'v' || /^\d*\s*v$/.test(v);
+  });
+}
+
+function calcVides(){
+  var videBlocks = blocks.filter(isVideBlock);
+  var el = document.getElementById('videResult');
+  if(!videBlocks.length){
+    el.style.display = 'block';
+    el.innerHTML = 'Aucun emplacement vide detecte (recherchez un lot/texte contenant uniquement "v" ou "Xv").';
+    return;
+  }
+  var total = videBlocks.reduce(function(s,b){ return s + (parseInt(b.poches)||parseInt(b.nbcases)||0); }, 0);
+  el.style.display = 'block';
+  el.innerHTML = '<strong>'+videBlocks.length+'</strong> emplacement'+(videBlocks.length>1?'s':'')+' vide'+(videBlocks.length>1?'s':'')+' detecte'+(videBlocks.length>1?'s':'')+' — <strong>'+total+' poches</strong> disponibles au total.';
+}
 
 function searchLot(){
   var val = document.getElementById('searchLot').value.trim();
