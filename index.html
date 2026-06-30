@@ -69,10 +69,6 @@
     <input type="number" id="nrows" value="20" min="1">
     <button class="btn btn-primary" onclick="applyGridSize()">Appliquer</button>
     <span style="flex:1"></span>
-    <button class="btn" onclick="zoomOut()" title="Zoom arriere">−</button>
-    <span id="zoomLabel" style="font-size:.8rem;color:#718096;min-width:36px;text-align:center">100%</span>
-    <button class="btn" onclick="zoomIn()" title="Zoom avant">+</button>
-    <button class="btn" onclick="zoomReset()" title="Reinitialiser le zoom">100%</button>
     <button class="btn" id="undoBtn" onclick="undo()" title="Annuler (Ctrl+Z)">Annuler</button>
     <button class="btn" id="redoBtn" onclick="redo()" title="Retablir (Ctrl+Y)">Retablir</button>
     <button class="btn btn-danger" onclick="resetAll()">Tout effacer</button>
@@ -231,7 +227,7 @@ var selDir = 'right';
 var colWidths = {};
 var rowHeights = {};
 var ctxTarget = null;
-var zoomFactor = 1;
+var highlightedIndices = [];
 
 var stateHistory = [];
 var historyIndex = -1;
@@ -353,23 +349,6 @@ function deleteRow(r){
   render();
 }
 
-function getColW(c){
-  return Math.round((colWidths[c] || 26) * zoomFactor);
-}
-function getRowH(r){
-  return Math.round((rowHeights[r] || 26) * zoomFactor);
-}
-
-function applyZoom(newZoom){
-  zoomFactor = Math.max(0.4, Math.min(2.5, newZoom));
-  document.getElementById('zoomLabel').textContent = Math.round(zoomFactor*100)+'%';
-  render();
-}
-
-function zoomIn(){ applyZoom(zoomFactor + 0.1); }
-function zoomOut(){ applyZoom(zoomFactor - 0.1); }
-function zoomReset(){ applyZoom(1); }
-
 function cellsOfBlock(b){
   if(!b) return [];
   var span = b.type==='libre' ? Math.max(1, b.nbcases||1) : Math.max(1, Math.ceil((b.poches||1)/ppc));
@@ -437,36 +416,50 @@ function todayISO(){
 var searchedLot = null;
 var showDetail = false;
 
+function selectBlocksByIndices(indices){
+  highlightedIndices = indices;
+  render();
+  var gridWrap = document.querySelector('.grid-wrap');
+  if(gridWrap) gridWrap.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
 function calcRefWeight(ref){
-  var matching = blocks.filter(function(b){
-    return b.type !== 'libre' && b.gram && String(b.gram).trim().toUpperCase() === ref.toUpperCase();
+  var matchingIdx = [];
+  blocks.forEach(function(b,i){
+    if(b.type !== 'libre' && b.gram && String(b.gram).trim().toUpperCase() === ref.toUpperCase()){
+      matchingIdx.push(i);
+    }
   });
   var el = document.getElementById('refWeightResult');
-  if(!matching.length){
+  if(!matchingIdx.length){
     el.style.display = 'block';
     el.innerHTML = 'Aucune case '+escapeHtml(ref)+' trouvee sur le plan.';
     return;
   }
 
   var totalPoches = 0, totalPoids = 0, sansPoids = 0;
-  var detail = matching.map(function(b){
+  var detail = matchingIdx.map(function(i){
+    var b = blocks[i];
     var poches = parseInt(b.poches)||0;
     var poidsUnitaire = parseFloat(b.poids)||0;
     var poidsLigne = poidsUnitaire ? +(poches*poidsUnitaire).toFixed(1) : 0;
     totalPoches += poches;
     totalPoids += poidsLigne;
     if(!poidsUnitaire) sansPoids += poches;
-    return {lot:b.lot||'—', poches:poches, poidsUnitaire:poidsUnitaire, poidsLigne:poidsLigne};
+    return {idx:i, lot:b.lot||'—', poches:poches, poidsUnitaire:poidsUnitaire, poidsLigne:poidsLigne};
   });
 
-  var html = '<div style="font-weight:600;margin-bottom:8px">'+escapeHtml(ref)+' — '+matching.length+' case'+(matching.length>1?'s':'')+' — '+totalPoches+' poches — <strong>'+totalPoids.toFixed(1)+' kg</strong> au total</div>';
+  var html = '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">';
+  html += '<div style="font-weight:600">'+escapeHtml(ref)+' — '+matchingIdx.length+' case'+(matchingIdx.length>1?'s':'')+' — '+totalPoches+' poches — <strong>'+totalPoids.toFixed(1)+' kg</strong> au total</div>';
+  html += '<button class="btn" onclick="selectBlocksByIndices('+JSON.stringify(matchingIdx)+')">Tout selectionner sur la grille</button>';
+  html += '</div>';
   if(sansPoids>0){
     html += '<div style="color:#e24b4a;font-size:.78rem;margin-bottom:8px">'+sansPoids+' poches sans poids/p renseigne (non comptees dans le total)</div>';
   }
   html += '<table style="width:100%;border-collapse:collapse;font-size:.8rem">';
   html += '<thead><tr style="background:#f8f9fa"><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Lot</th><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Poches</th><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Poids/p</th><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Poids ligne</th></tr></thead><tbody>';
   detail.forEach(function(d){
-    html += '<tr><td style="padding:6px 8px;border-bottom:1px solid #edf0f3">'+escapeHtml(d.lot)+'</td><td style="padding:6px 8px;border-bottom:1px solid #edf0f3;font-weight:600">'+d.poches+'p</td><td style="padding:6px 8px;border-bottom:1px solid #edf0f3">'+(d.poidsUnitaire?d.poidsUnitaire+'kg':'—')+'</td><td style="padding:6px 8px;border-bottom:1px solid #edf0f3;font-weight:600">'+(d.poidsLigne?d.poidsLigne+'kg':'—')+'</td></tr>';
+    html += '<tr style="cursor:pointer" onclick="selectBlocksByIndices(['+d.idx+'])" onmouseover="this.style.background=\'#f0f9ff\'" onmouseout="this.style.background=\'\'"><td style="padding:6px 8px;border-bottom:1px solid #edf0f3">'+escapeHtml(d.lot)+'</td><td style="padding:6px 8px;border-bottom:1px solid #edf0f3;font-weight:600">'+d.poches+'p</td><td style="padding:6px 8px;border-bottom:1px solid #edf0f3">'+(d.poidsUnitaire?d.poidsUnitaire+'kg':'—')+'</td><td style="padding:6px 8px;border-bottom:1px solid #edf0f3;font-weight:600">'+(d.poidsLigne?d.poidsLigne+'kg':'—')+'</td></tr>';
   });
   html += '</tbody></table>';
 
@@ -486,16 +479,33 @@ function isVideBlock(b){
 }
 
 function calcVides(){
-  var videBlocks = blocks.filter(isVideBlock);
+  var videIdx = [];
+  blocks.forEach(function(b,i){ if(isVideBlock(b)) videIdx.push(i); });
   var el = document.getElementById('videResult');
-  if(!videBlocks.length){
+  if(!videIdx.length){
     el.style.display = 'block';
     el.innerHTML = 'Aucun emplacement vide detecte (recherchez un lot/texte contenant uniquement "v" ou "Xv").';
     return;
   }
-  var total = videBlocks.reduce(function(s,b){ return s + (parseInt(b.poches)||parseInt(b.nbcases)||0); }, 0);
+  var total = 0;
+  var html = '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">';
+  var rows = videIdx.map(function(i){
+    var b = blocks[i];
+    var poches = parseInt(b.poches)||parseInt(b.nbcases)||0;
+    total += poches;
+    return {idx:i, poches:poches, label:(b.lot||b.gram||b.libretext||'v')};
+  });
+  html += '<div><strong>'+videIdx.length+'</strong> emplacement'+(videIdx.length>1?'s':'')+' vide'+(videIdx.length>1?'s':'')+' — <strong>'+total+' poches</strong> disponibles au total.</div>';
+  html += '<button class="btn" onclick="selectBlocksByIndices('+JSON.stringify(videIdx)+')">Tout selectionner sur la grille</button>';
+  html += '</div>';
+  html += '<table style="width:100%;border-collapse:collapse;font-size:.8rem">';
+  html += '<thead><tr style="background:#f8f9fa"><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Repere</th><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Poches</th></tr></thead><tbody>';
+  rows.forEach(function(d){
+    html += '<tr style="cursor:pointer" onclick="selectBlocksByIndices(['+d.idx+'])" onmouseover="this.style.background=\'#f0f9ff\'" onmouseout="this.style.background=\'\'"><td style="padding:6px 8px;border-bottom:1px solid #edf0f3">'+escapeHtml(String(d.label))+'</td><td style="padding:6px 8px;border-bottom:1px solid #edf0f3;font-weight:600">'+d.poches+'p</td></tr>';
+  });
+  html += '</tbody></table>';
   el.style.display = 'block';
-  el.innerHTML = '<strong>'+videBlocks.length+'</strong> emplacement'+(videBlocks.length>1?'s':'')+' vide'+(videBlocks.length>1?'s':'')+' detecte'+(videBlocks.length>1?'s':'')+' — <strong>'+total+' poches</strong> disponibles au total.';
+  el.innerHTML = html;
 }
 
 function searchLot(){
@@ -503,6 +513,9 @@ function searchLot(){
   if(!val){ clearSearch(); return; }
   searchedLot = val;
   showDetail = false;
+  highlightedIndices = blocks.map(function(b,i){return i;}).filter(function(i){
+    return blocks[i].type!=='libre' && blocks[i].lot===searchedLot;
+  });
   renderSearchResult();
   render();
 }
@@ -510,8 +523,11 @@ function searchLot(){
 function clearSearch(){
   searchedLot = null;
   showDetail = false;
+  highlightedIndices = [];
   document.getElementById('searchLot').value = '';
   document.getElementById('searchResult').style.display = 'none';
+  document.getElementById('videResult').style.display = 'none';
+  document.getElementById('refWeightResult').style.display = 'none';
   render();
 }
 
@@ -622,7 +638,7 @@ function renderInner(){
   var occ = occupancyMap();
   var html = '<colgroup><col style="width:36px">';
   for(var ci=0;ci<ncols;ci++){
-    html += '<col style="width:'+getColW(ci)+'px">';
+    html += '<col style="width:'+(colWidths[ci]||26)+'px">';
   }
   html += '</colgroup>';
   html += '<thead><tr><th class="corner"></th>';
@@ -632,7 +648,7 @@ function renderInner(){
   html += '</tr></thead><tbody>';
 
   for(var r=0;r<nrows;r++){
-    var rh = getRowH(r);
+    var rh = (rowHeights[r]||26);
     html += '<tr style="height:'+rh+'px"><th class="rowhead" oncontextmenu="openRowCtx(event,'+r+')">L'+(r+1)+' <span class="rowdel" onclick="deleteRow('+r+')" title="Supprimer">x</span></th>';
     var c2 = 0;
     while(c2 < ncols){
@@ -672,7 +688,7 @@ function renderInner(){
         var bw = b.borderwidth || '2';
         var bs = b.borderstyle || 'solid';
         var bc = b.bordercolor || '#1a202c';
-        var isHighlighted = searchedLot && b.type!=='libre' && b.lot===searchedLot;
+        var isHighlighted = highlightedIndices.indexOf(bi) !== -1;
         var cellStyle = 'background:'+b.color+'55;color:'+darken(b.color)+
           ';font-size:'+fs+'px;font-weight:'+fw+';text-align:'+ta+
           ';border:'+bw+'px '+bs+' '+bc;
@@ -686,9 +702,9 @@ function renderInner(){
           var totalHeight = 0;
           for(var hi=0; hi<span; hi++){
             var rr = (b.dir==='down') ? (b.row+hi) : (b.row-hi);
-            totalHeight += getRowH(rr);
+            totalHeight += (rowHeights[rr]||26);
           }
-          var colW = getColW(b.col);
+          var colW = (colWidths[b.col]||26);
           sizeStyle = 'width:'+colW+'px;max-width:'+colW+'px;height:'+totalHeight+'px;max-height:'+totalHeight+'px';
           cellStyle += ';padding:4px 2px;'+sizeStyle;
           innerHtml = '<div style="writing-mode:vertical-rl;text-orientation:mixed;height:100%;width:100%;display:flex;align-items:center;justify-content:'+(ta==='left'?'flex-start':ta==='right'?'flex-end':'center')+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+label+'</div>';
@@ -696,9 +712,9 @@ function renderInner(){
           spanAttr = 'colspan="'+cells.length+'"';
           var totalWidth = 0;
           for(var wi=0; wi<cells.length; wi++){
-            totalWidth += getColW(cells[wi][1]);
+            totalWidth += (colWidths[cells[wi][1]]||26);
           }
-          var rowH = getRowH(r);
+          var rowH = (rowHeights[r]||26);
           sizeStyle = 'width:'+totalWidth+'px;max-width:'+totalWidth+'px;height:'+rowH+'px;max-height:'+rowH+'px';
           cellStyle += ';'+sizeStyle;
           innerHtml = label;
@@ -1091,19 +1107,6 @@ document.addEventListener('keydown', function(e){
   } else if((e.ctrlKey||e.metaKey) && (e.key==='y' || (e.shiftKey&&e.key==='Z'))){
     e.preventDefault();
     redo();
-  }
-});
-
-document.addEventListener('DOMContentLoaded', function(){
-  var gridWrap = document.querySelector('.grid-wrap');
-  if(gridWrap){
-    gridWrap.addEventListener('wheel', function(e){
-      if(e.ctrlKey || e.metaKey){
-        e.preventDefault();
-        if(e.deltaY < 0) zoomIn();
-        else zoomOut();
-      }
-    }, {passive:false});
   }
 });
 
