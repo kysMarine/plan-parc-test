@@ -61,9 +61,9 @@
 
 <div class="main">
   <div class="toolbar">
-    <label>Poches / case</label>
-    <input type="number" id="ppc" value="10" min="1">
-    <label>Colonnes</label>
+    <label>Poches / px</label>
+    <input type="number" id="ppc" value="2" min="0.1" step="0.1" style="width:60px">
+    <label style="margin-left:4px">Colonnes</label>
     <input type="number" id="ncols" value="60" min="5">
     <label>Rangees</label>
     <input type="number" id="nrows" value="20" min="1">
@@ -117,7 +117,7 @@
     </div>
     <div id="libreFields" style="display:none">
       <div class="field"><label>Texte libre</label><input type="text" id="m-libretext" placeholder="ex: Zone reservee, Acces tracteur..."></div>
-      <div class="field"><label>Nombre de cases</label><input type="number" id="m-nbcases" min="1" value="1"></div>
+      <div class="field"><label>Nombre de poches (mode libre)</label><input type="number" id="m-nbcases" min="1" value="1"></div>
     </div>
     <div class="field">
       <label>Style du texte</label>
@@ -220,7 +220,7 @@
 
 <script>
 var STORAGE_KEY = 'plan_parc_test_v2';
-var ppc = 10, ncols = 60, nrows = 20;
+var ppc = 2, ncols = 60, nrows = 20;
 var blocks = [];
 var editing = null;
 var selDir = 'right';
@@ -250,7 +250,7 @@ function loadState(){
     var saved = localStorage.getItem(STORAGE_KEY);
     if(saved){
       var data = JSON.parse(saved);
-      ppc = data.ppc || 10;
+      ppc = data.ppc || 2;
       ncols = data.ncols || 60;
       nrows = data.nrows || 20;
       blocks = data.blocks || [];
@@ -330,9 +330,10 @@ function showToast(msg){
 }
 
 function applyGridSize(){
-  ppc = parseInt(document.getElementById('ppc').value)||10;
+  ppc = Math.max(0.1, parseFloat(document.getElementById('ppc').value)||2);
   ncols = Math.min(parseInt(document.getElementById('ncols').value)||60, 300);
   nrows = Math.min(parseInt(document.getElementById('nrows').value)||20, 200);
+  document.getElementById('ppc').value = ppc;
   document.getElementById('ncols').value = ncols;
   document.getElementById('nrows').value = nrows;
   saveState();
@@ -349,10 +350,19 @@ function deleteRow(r){
   render();
 }
 
+function blockPxWidth(b){
+  // Largeur en pixels du bloc selon poches/px
+  if(b.type==='libre') return Math.max(4, (b.nbcases||1) * (colWidths[b.col]||26));
+  return Math.max(4, Math.round((b.poches||1) / ppc));
+}
+
 function cellsOfBlock(b){
   if(!b) return [];
-  var span = b.type==='libre' ? Math.max(1, b.nbcases||1) : Math.max(1, Math.ceil((b.poches||1)/ppc));
-  span = Math.min(span, 500); // garde-fou anti-boucle-infinie
+  var colW = colWidths[b.col] || 26;
+  var totalPx = blockPxWidth(b);
+  // Nombre de colonnes nécessaires pour couvrir totalPx
+  var span = Math.max(1, Math.ceil(totalPx / colW));
+  span = Math.min(span, 500);
   var cells = [];
   for(var i=0;i<span;i++){
     var r=b.row, c=b.col;
@@ -704,18 +714,16 @@ function renderInner(){
             var rr = (b.dir==='down') ? (b.row+hi) : (b.row-hi);
             totalHeight += (rowHeights[rr]||26);
           }
-          var colW = (colWidths[b.col]||26);
-          sizeStyle = 'width:'+colW+'px;max-width:'+colW+'px;height:'+totalHeight+'px;max-height:'+totalHeight+'px';
+          var colW2 = (colWidths[b.col]||26);
+          var exactPx = Math.round((b.poches||1)/ppc);
+          sizeStyle = 'width:'+colW2+'px;max-width:'+colW2+'px;height:'+exactPx+'px;max-height:'+exactPx+'px';
           cellStyle += ';padding:4px 2px;'+sizeStyle;
           innerHtml = '<div style="writing-mode:vertical-rl;text-orientation:mixed;height:100%;width:100%;display:flex;align-items:center;justify-content:'+(ta==='left'?'flex-start':ta==='right'?'flex-end':'center')+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+label+'</div>';
         } else {
           spanAttr = 'colspan="'+cells.length+'"';
-          var totalWidth = 0;
-          for(var wi=0; wi<cells.length; wi++){
-            totalWidth += (colWidths[cells[wi][1]]||26);
-          }
+          var exactW = blockPxWidth(b);
           var rowH = (rowHeights[r]||26);
-          sizeStyle = 'width:'+totalWidth+'px;max-width:'+totalWidth+'px;height:'+rowH+'px;max-height:'+rowH+'px';
+          sizeStyle = 'width:'+exactW+'px;max-width:'+exactW+'px;height:'+rowH+'px;max-height:'+rowH+'px';
           cellStyle += ';'+sizeStyle;
           innerHtml = label;
         }
@@ -1029,7 +1037,7 @@ function importJSON(event){
   reader.onload = function(e){
     try{
       var data = JSON.parse(e.target.result);
-      ppc = data.ppc || 10;
+      ppc = data.ppc || 2;
       ncols = data.ncols || 60;
       nrows = data.nrows || 20;
       blocks = data.blocks || [];
