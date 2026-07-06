@@ -3,1123 +3,688 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Plan des parcs — Projet 2 (test)</title>
+<title>Plan des parcs</title>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8f9fa;color:#1a202c;min-height:100vh}
-  .header{background:#fff;border-bottom:1px solid #e2e8f0;padding:1rem 1.5rem}
-  .header h1{font-size:1.1rem;font-weight:600}
-  .header p{font-size:.8rem;color:#718096}
-  .main{max-width:100%;margin:0 auto;padding:1.25rem}
-  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:1.25rem;padding:.85rem 1rem;background:#fff;border:1px solid #e2e8f0;border-radius:12px}
-  .toolbar label{font-size:.8rem;color:#718096;font-weight:500}
-  .toolbar input{padding:.4rem .6rem;border:1px solid #e2e8f0;border-radius:8px;font-size:.85rem;width:65px}
-  .btn{padding:.5rem 1rem;border-radius:8px;font-size:.85rem;font-weight:500;cursor:pointer;border:1px solid #e2e8f0;background:#fff;color:#1a202c;white-space:nowrap}
-  .btn:hover{background:#f8f9fa}
-  .btn-primary{background:#0ea5e9;color:#fff;border-color:#0ea5e9}
-  .btn-primary:hover{background:#0284c7}
-  .btn-danger{color:#e24b4a;border-color:#e24b4a}
-  .btn-danger:hover{background:#fff5f5}
-  .grid-wrap{overflow:auto;border:1px solid #e2e8f0;border-radius:12px;background:#fff;max-height:75vh}
-  table.grid{border-collapse:collapse;table-layout:fixed;width:0}
-  table.grid td, table.grid th{border:1px solid #edf0f3;padding:0;text-align:center;overflow:hidden;min-width:0;max-width:none;box-sizing:border-box}
-  table.grid th.colhead{font-size:.65rem;color:#a0aec0;font-weight:500;height:20px;background:#fafbfc;position:sticky;top:0;z-index:2;cursor:context-menu;overflow:hidden}
-  table.grid th.rowhead{font-size:.7rem;color:#718096;font-weight:600;width:34px;background:#fafbfc;position:sticky;left:0;z-index:2;cursor:context-menu}
-  table.grid th.corner{position:sticky;top:0;left:0;z-index:3;background:#fafbfc}
-  td.cell{height:26px;cursor:pointer;background:#fff}
-  td.cell:hover{background:#f0f9ff}
-  td.blockcell{font-size:.62rem;font-weight:600;line-height:1.1;padding:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;word-break:break-all}
-  .rowdel{font-size:.65rem;color:#cbd5e0;cursor:pointer;padding:0 3px}
-  .rowdel:hover{color:#e24b4a}
-  .legend{font-size:.78rem;color:#a0aec0;margin-bottom:.75rem}
-  .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center;padding:1rem}
-  .overlay.open{display:flex}
-  .modal{background:#fff;border-radius:14px;padding:1.25rem;width:100%;max-width:360px}
-  .modal p.title{font-weight:600;font-size:.95rem;margin-bottom:12px}
-  .field{margin-bottom:10px}
-  .field label{display:block;font-size:.78rem;color:#718096;margin-bottom:4px}
-  .field input,.field select{width:100%;padding:.45rem .6rem;border:1px solid #e2e8f0;border-radius:8px;font-size:.85rem}
-  .swatches{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
-  .swatch{width:26px;height:26px;border-radius:7px;cursor:pointer;border:2px solid transparent}
-  .swatch.sel{border-color:#1a202c}
-  .dirgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px;width:140px}
-  .dirbtn{padding:.5rem;border:1px solid #e2e8f0;border-radius:8px;background:#fff;cursor:pointer;font-size:.85rem;text-align:center}
-  .dirbtn.sel{background:#0ea5e9;color:#fff;border-color:#0ea5e9}
-  .dirbtn:disabled{opacity:.25;cursor:default}
-  .modalbtns{display:flex;gap:8px;margin-top:14px}
-  .modalbtns .btn{flex:1;text-align:center;display:flex;justify-content:center}
-  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a202c;color:#fff;padding:.6rem 1.2rem;border-radius:10px;font-size:.85rem;opacity:0;transition:opacity .3s;pointer-events:none;z-index:300}
-  .toast.show{opacity:1}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8f9fa;color:#1a202c;height:100vh;display:flex;flex-direction:column}
+
+/* HEADER */
+.header{background:#fff;border-bottom:1px solid #e2e8f0;padding:.75rem 1.25rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap;z-index:50;flex-shrink:0}
+.header h1{font-size:1rem;font-weight:600;margin-right:8px}
+.btn{padding:.4rem .9rem;border-radius:8px;font-size:.82rem;font-weight:500;cursor:pointer;border:1px solid #e2e8f0;background:#fff;color:#1a202c;white-space:nowrap}
+.btn:hover{background:#f1f5f9}
+.btn-primary{background:#0ea5e9;color:#fff;border-color:#0ea5e9}
+.btn-primary:hover{background:#0284c7}
+.btn-danger{color:#e24b4a;border-color:#fecaca}
+.btn-danger:hover{background:#fff5f5}
+.sep{width:1px;height:20px;background:#e2e8f0;flex-shrink:0}
+.zoom-info{font-size:.78rem;color:#718096;min-width:40px;text-align:center}
+
+/* GRILLE */
+.grid-wrap{overflow:auto;flex:1;min-height:200px;cursor:default;background:#fff}
+.grid-inner{transform-origin:top left;will-change:transform;display:inline-block}
+table{border-collapse:collapse;table-layout:fixed;width:0}
+col{width:10px}
+col.rowhead-col{width:30px}
+td,th{border:0.5px solid #e8eaed;padding:0;overflow:hidden;min-width:0}
+th.corner{position:sticky;top:0;left:0;z-index:4;background:#f8f9fa;width:30px;height:10px}
+th.ch{font-size:8px;color:#bbb;font-weight:400;background:#f8f9fa;height:10px;text-align:center;position:sticky;top:0;z-index:3;width:10px}
+th.rh{font-size:8px;color:#bbb;font-weight:400;background:#f8f9fa;width:30px;text-align:right;padding-right:4px;position:sticky;left:0;z-index:2}
+td.cell{width:10px;height:10px;background:#fff;cursor:crosshair}
+td.cell:hover{background:#eff6ff}
+td.cell.drag-sel{background:#bfdbfe}
+td.blockcell{font-size:8px;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer}
+td.blockcell:hover{filter:brightness(.93)}
+td.blockcell.highlighted{outline:2px solid #e63946;outline-offset:-1px;z-index:2}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;align-items:center;justify-content:center;padding:1rem}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:14px;padding:1.25rem;width:100%;max-width:340px;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:.95rem;font-weight:600;margin-bottom:12px}
+.field{margin-bottom:9px}
+.field label{display:block;font-size:.75rem;color:#718096;margin-bottom:3px}
+.field input,.field select,.field textarea{width:100%;padding:.4rem .6rem;border:1px solid #e2e8f0;border-radius:7px;font-size:.82rem;font-family:inherit}
+.swatches{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+.swatch{width:22px;height:22px;border-radius:5px;cursor:pointer;border:2px solid transparent;flex-shrink:0}
+.swatch.sel{border-color:#1a202c}
+.modal-btns{display:flex;gap:7px;margin-top:12px}
+.modal-btns .btn{flex:1;text-align:center}
+.info-box{background:#e0f2fe;border:1px solid #bae6fd;border-radius:7px;padding:.4rem .7rem;font-size:.75rem;color:#075985;margin-bottom:9px;display:none}
+
+/* RESULTATS */
+.results{padding:.75rem 1.25rem;background:#fff;border-bottom:1px solid #e2e8f0;display:none;flex-shrink:0}
+.results.open{display:block}
+.res-card{font-size:.82rem}
+.res-card table{width:100%;border-collapse:collapse;margin-top:8px}
+.res-card th{text-align:left;padding:4px 8px;border-bottom:1px solid #e2e8f0;font-size:.75rem;font-weight:500;background:#f8f9fa}
+.res-card td{padding:4px 8px;border-bottom:1px solid #f1f5f9}
+.res-card tr:hover td{background:#f0f9ff;cursor:pointer}
+
+/* PRINT */
+@media print{
+  .header,.results{display:none!important}
+  .grid-wrap{height:auto;overflow:visible}
+  .grid-inner{transform:none!important}
+}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a202c;color:#fff;padding:.5rem 1.1rem;border-radius:10px;font-size:.82rem;opacity:0;transition:opacity .25s;pointer-events:none;z-index:500}
+.toast.show{opacity:1}
 </style>
 </head>
 <body>
 
 <div class="header">
-  <h1>Plan des parcs — version test (Projet 2)</h1>
-  <p>Grille complete facon tableur - vos donnees restent dans ce navigateur uniquement</p>
+  <h1>Plan des parcs</h1>
+  <div class="sep"></div>
+  <label style="font-size:.75rem;color:#718096">Colonnes</label>
+  <input type="number" id="inp-cols" value="100" min="10" max="500" style="width:60px;padding:.3rem .5rem;border:1px solid #e2e8f0;border-radius:7px;font-size:.82rem">
+  <label style="font-size:.75rem;color:#718096">Rangées</label>
+  <input type="number" id="inp-rows" value="30" min="5" max="300" style="width:60px;padding:.3rem .5rem;border:1px solid #e2e8f0;border-radius:7px;font-size:.82rem">
+  <label style="font-size:.75rem;color:#718096">Poches/px</label>
+  <input type="number" id="inp-ppp" value="2" min="0.1" step="0.1" style="width:60px;padding:.3rem .5rem;border:1px solid #e2e8f0;border-radius:7px;font-size:.82rem">
+  <button class="btn btn-primary" onclick="applySettings()">Appliquer</button>
+  <div class="sep"></div>
+  <button onclick="doZoom(-0.15)" style="width:26px;height:26px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;font-size:15px">−</button>
+  <span class="zoom-info" id="zoom-label">100%</span>
+  <button onclick="doZoom(0.15)" style="width:26px;height:26px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;font-size:15px">+</button>
+  <button class="btn" onclick="doZoom(-99)">100%</button>
+  <div class="sep"></div>
+  <input type="text" id="inp-search" placeholder="Rechercher un lot..." style="width:150px;padding:.3rem .6rem;border:1px solid #e2e8f0;border-radius:7px;font-size:.82rem" onkeydown="if(event.key==='Enter')doSearch()">
+  <button class="btn" onclick="doSearch()">Chercher</button>
+  <button class="btn" onclick="clearSearch()">✕</button>
+  <div class="sep"></div>
+  <button class="btn" onclick="calcVides()">Vides</button>
+  <button class="btn" onclick="calcRef('K2')">Poids K2</button>
+  <button class="btn" onclick="calcRef('K3')">Poids K3</button>
+  <div class="sep"></div>
+  <button class="btn" id="undoBtn" onclick="undo()" disabled>Annuler</button>
+  <button class="btn" id="redoBtn" onclick="redo()" disabled>Rétablir</button>
+  <div class="sep"></div>
+  <button class="btn" onclick="openPrint()">🖨️ Imprimer</button>
+  <button class="btn" onclick="exportData()">Exporter</button>
+  <button class="btn" onclick="document.getElementById('inp-import').click()">Importer</button>
+  <input type="file" id="inp-import" accept=".json" style="display:none" onchange="importData(event)">
+  <button class="btn btn-danger" onclick="resetAll()">Tout effacer</button>
 </div>
 
-<div class="main">
-  <div class="toolbar">
-    <label>Poches / px</label>
-    <input type="number" id="ppc" value="2" min="0.1" step="0.1" style="width:60px">
-    <label style="margin-left:4px">Colonnes</label>
-    <input type="number" id="ncols" value="60" min="5">
-    <label>Rangees</label>
-    <input type="number" id="nrows" value="20" min="1">
-    <button class="btn btn-primary" onclick="applyGridSize()">Appliquer</button>
-    <span style="flex:1"></span>
-    <button class="btn" id="undoBtn" onclick="undo()" title="Annuler (Ctrl+Z)">Annuler</button>
-    <button class="btn" id="redoBtn" onclick="redo()" title="Retablir (Ctrl+Y)">Retablir</button>
-    <button class="btn btn-danger" onclick="resetAll()">Tout effacer</button>
-    <button class="btn" onclick="exportJSON()">Exporter</button>
+<div class="results" id="results"><div class="res-card" id="res-content"></div></div>
 
-  </div>
-
-  <div class="legend">Cliquez sur une case vide pour creer un bloc, choisissez la direction de remplissage. Cliquez sur un bloc existant pour le modifier ou le supprimer.</div>
-
-  <div class="toolbar" style="margin-bottom:1rem">
-    <label>Rechercher un lot</label>
-    <input type="text" id="searchLot" placeholder="ex: 02S25" style="width:150px" onkeydown="if(event.key==='Enter')searchLot()">
-    <button class="btn btn-primary" onclick="searchLot()">Rechercher</button>
-    <button class="btn" onclick="clearSearch()">Effacer</button>
-    <span style="flex:1"></span>
-    <button class="btn" onclick="calcVides()">Calculer les emplacements vides</button>
-    <button class="btn" onclick="calcRefWeight('K2')">Poids total K2</button>
-    <button class="btn" onclick="calcRefWeight('K3')">Poids total K3</button>
-  </div>
-  <div id="searchResult" style="display:none;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:.85rem 1rem;margin-bottom:1rem;font-size:.85rem"></div>
-  <div id="videResult" style="display:none;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:.85rem 1rem;margin-bottom:1rem;font-size:.85rem"></div>
-  <div id="refWeightResult" style="display:none;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:.85rem 1rem;margin-bottom:1rem;font-size:.85rem"></div>
-
-  <div class="grid-wrap">
-    <table class="grid" id="gridTable"></table>
+<div class="grid-wrap" id="gridWrap">
+  <div class="grid-inner" id="gridInner">
+    <table id="grid"></table>
   </div>
 </div>
 
-<div class="overlay" id="modalBg">
+<!-- MODAL LOT -->
+<div class="overlay" id="modalLot">
   <div class="modal">
-    <p class="title">Details du bloc</p>
-    <div class="field">
-      <label>Type de bloc</label>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-        <button type="button" class="dirbtn" id="type-lot" onclick="pickBlockType('lot')">Lot</button>
-        <button type="button" class="dirbtn" id="type-libre" onclick="pickBlockType('libre')">Libre</button>
+    <div class="modal-title" id="lot-title">Nouveau lot</div>
+    <div class="field"><label>Nombre de poches</label><input type="number" id="l-poches" min="1" value="10"></div>
+    <div class="field"><label>Grammage / Référence</label><input type="text" id="l-gram" placeholder="ex: 12 ou K2"></div>
+    <div class="field"><label>Numéro de lot</label><input type="text" id="l-lot" placeholder="ex: 02S25"></div>
+    <div class="field"><label>Poids/p (kg)</label><input type="number" id="l-poids" step="0.1" placeholder="ex: 2.4"></div>
+    <div class="field"><label>Date</label><input type="date" id="l-date"></div>
+    <div class="field"><label>Notes</label><input type="text" id="l-notes" placeholder="observations"></div>
+    <div class="field"><label>Direction</label>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;width:120px">
+        <span></span><button type="button" class="btn" id="d-up" onclick="setDir('up')">↑</button><span></span>
+        <button type="button" class="btn" id="d-left" onclick="setDir('left')">←</button>
+        <span style="display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#ccc">●</span>
+        <button type="button" class="btn" id="d-right" onclick="setDir('right')">→</button>
+        <span></span><button type="button" class="btn" id="d-down" onclick="setDir('down')">↓</button><span></span>
       </div>
     </div>
-    <div id="lotFields">
-      <div class="field"><label>Nombre de poches</label><input type="number" id="m-poches" min="1" value="10"></div>
-      <div class="field"><label>Grammage / Reference</label><input type="text" id="m-gram" placeholder="ex: 27g ou K2"></div>
-      <div class="field"><label>Numero de lot</label><input type="text" id="m-lot" placeholder="ex: 02S25"></div>
-      <div class="field"><label>Poids/p (kg)</label><input type="number" id="m-poids" step="0.1" placeholder="ex: 5.5"></div>
-      <div class="field"><label>Date</label><input type="date" id="m-date"></div>
-      <div class="field"><label>Notes</label><input type="text" id="m-notes" placeholder="observations"></div>
-    </div>
-    <div id="libreFields" style="display:none">
-      <div class="field"><label>Texte libre</label><input type="text" id="m-libretext" placeholder="ex: Zone reservee, Acces tracteur..."></div>
-      <div class="field"><label>Nombre de poches (mode libre)</label><input type="number" id="m-nbcases" min="1" value="1"></div>
-    </div>
-    <div class="field">
-      <label>Style du texte</label>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
-        <select id="m-fontsize">
-          <option value="10">Petit</option>
-          <option value="12" selected>Normal</option>
-          <option value="14">Grand</option>
-          <option value="16">Tres grand</option>
-        </select>
-        <select id="m-fontweight">
-          <option value="400">Normal</option>
-          <option value="700" selected>Gras</option>
-        </select>
-        <select id="m-textalign">
-          <option value="left">Gauche</option>
-          <option value="center" selected>Centre</option>
-          <option value="right">Droite</option>
-        </select>
+    <div class="field"><label>Couleur</label><div class="swatches" id="lot-swatches"></div></div>
+    <div class="field"><label>Style texte</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px">
+        <select id="l-fsize"><option value="8">Petit</option><option value="10" selected>Normal</option><option value="12">Grand</option></select>
+        <select id="l-fweight"><option value="400">Normal</option><option value="700" selected>Gras</option></select>
+        <select id="l-align"><option value="left">G</option><option value="center" selected>C</option><option value="right">D</option></select>
       </div>
     </div>
-    <div class="field">
-      <label>Bordure du bloc</label>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
-        <select id="m-borderwidth">
-          <option value="1">Fine</option>
-          <option value="2" selected>Normale</option>
-          <option value="3">Epaisse</option>
-          <option value="4">Tres epaisse</option>
-        </select>
-        <select id="m-borderstyle">
-          <option value="solid">Pleine</option>
-          <option value="dashed">Pointillee</option>
-          <option value="dotted">Petits points</option>
-          <option value="double" selected>Double</option>
-        </select>
+    <div class="field"><label>Bordure</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:5px">
+        <select id="l-bwidth"><option value="1">Fine</option><option value="2" selected>Normale</option><option value="3">Épaisse</option></select>
+        <select id="l-bstyle"><option value="solid">Pleine</option><option value="double" selected>Double</option><option value="dashed">Pointillée</option></select>
       </div>
-      <input type="color" id="m-bordercolor" value="#1a202c" style="width:100%;height:34px;padding:2px">
+      <input type="color" id="l-bcolor" value="#1a202c" style="width:100%;height:32px;padding:2px;border:1px solid #e2e8f0;border-radius:7px">
     </div>
-    <div class="field">
-      <label>Direction de remplissage</label>
-      <div class="dirgrid" id="dirgrid">
-        <span></span>
-        <button type="button" class="dirbtn" id="dir-up" onclick="pickDir('up')">Haut</button>
-        <span></span>
-        <button type="button" class="dirbtn" id="dir-left" onclick="pickDir('left')">Gauche</button>
-        <span style="display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#a0aec0">o</span>
-        <button type="button" class="dirbtn" id="dir-right" onclick="pickDir('right')">Droite</button>
-        <span></span>
-        <button type="button" class="dirbtn" id="dir-down" onclick="pickDir('down')">Bas</button>
-        <span></span>
+    <div class="modal-btns">
+      <button class="btn btn-primary" onclick="saveLot()">Enregistrer</button>
+      <button class="btn btn-danger" onclick="deleteLot()" id="del-lot" style="display:none">Supprimer</button>
+      <button class="btn" onclick="closeModal('modalLot')">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LIBRE -->
+<div class="overlay" id="modalLibre">
+  <div class="modal">
+    <div class="modal-title">Zone libre</div>
+    <div class="info-box" id="libre-info"></div>
+    <div class="field"><label>Texte</label><input type="text" id="fr-text" placeholder="ex: Zone réservée, Accès..."></div>
+    <div class="field"><label>Couleur de fond</label><div class="swatches" id="libre-swatches"></div></div>
+    <div class="field"><label>Style texte</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px">
+        <select id="fr-fsize"><option value="8">Petit</option><option value="10" selected>Normal</option><option value="12">Grand</option></select>
+        <select id="fr-fweight"><option value="400">Normal</option><option value="700" selected>Gras</option></select>
+        <select id="fr-align"><option value="left">G</option><option value="center" selected>C</option><option value="right">D</option></select>
       </div>
     </div>
-    <div class="field">
-      <label>Couleur</label>
-      <div class="swatches" id="swatches"></div>
+    <div class="field"><label>Bordure</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:5px">
+        <select id="fr-bwidth"><option value="1">Fine</option><option value="2" selected>Normale</option><option value="3">Épaisse</option></select>
+        <select id="fr-bstyle"><option value="solid">Pleine</option><option value="double" selected>Double</option><option value="dashed">Pointillée</option></select>
+      </div>
+      <input type="color" id="fr-bcolor" value="#1a202c" style="width:100%;height:32px;padding:2px;border:1px solid #e2e8f0;border-radius:7px">
     </div>
-    <div class="modalbtns">
-      <button class="btn btn-primary" onclick="saveBlock()">Enregistrer</button>
-      <button class="btn btn-danger" onclick="deleteBlock()" id="delBtn" style="display:none">Supprimer</button>
-      <button class="btn" onclick="closeModal()">Annuler</button>
+    <div class="modal-btns">
+      <button class="btn btn-primary" onclick="saveLibre()">Enregistrer</button>
+      <button class="btn btn-danger" onclick="deleteLibre()" id="del-libre" style="display:none">Supprimer</button>
+      <button class="btn" onclick="closeModal('modalLibre')">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL IMPRESSION -->
+<div class="overlay" id="modalPrint">
+  <div class="modal">
+    <div class="modal-title">Impression</div>
+    <div class="field"><label>Titre</label><input type="text" id="pr-title" value="Plan des parcs"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="field"><label>Format</label><select id="pr-format"><option value="A4">A4</option><option value="A3" selected>A3</option></select></div>
+      <div class="field"><label>Orientation</label><select id="pr-orient"><option value="landscape" selected>Paysage</option><option value="portrait">Portrait</option></select></div>
+    </div>
+    <div class="field"><label>Colonnes (de → à)</label>
+      <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:5px;align-items:center">
+        <input type="number" id="pr-c1" value="1" min="1"><span style="text-align:center;font-size:.75rem;color:#999">→</span><input type="number" id="pr-c2" min="1">
+      </div>
+    </div>
+    <div class="field"><label>Rangées (de → à)</label>
+      <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:5px;align-items:center">
+        <input type="number" id="pr-r1" value="1" min="1"><span style="text-align:center;font-size:.75rem;color:#999">→</span><input type="number" id="pr-r2" min="1">
+      </div>
+    </div>
+    <div class="field"><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="pr-nums" checked> Numéros colonnes/rangées</label></div>
+    <div class="field"><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="pr-empty" checked> Quadrillage vide</label></div>
+    <div class="modal-btns">
+      <button class="btn btn-primary" onclick="doPrint()">🖨️ Lancer</button>
+      <button class="btn" onclick="closeModal('modalPrint')">Annuler</button>
     </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<div class="overlay" id="sheetImportOverlay">
-  <div class="modal" style="max-width:420px">
-    <p class="title">Importer depuis Google Sheet</p>
-    <div class="field">
-      <label>Lien ou ID de la feuille Google Sheet</label>
-      <input type="text" id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/...">
-    </div>
-    <div class="field">
-      <label>Lieu / Parc associe</label>
-      <input type="text" id="sheetLieu" placeholder="ex: Carnac">
-    </div>
-    <div class="field">
-      <label>Rangee de depart sur la grille</label>
-      <input type="number" id="sheetRowOffset" min="0" value="0">
-    </div>
-    <div id="sheetImportStatus" style="font-size:.8rem;color:#718096;margin-bottom:8px"></div>
-    <div class="modalbtns">
-      <button class="btn btn-primary" onclick="runSheetImport()">Importer</button>
-      <button class="btn" onclick="closeSheetImport()">Annuler</button>
-    </div>
-  </div>
-</div>
-
-<div id="ctxMenu" style="display:none;position:fixed;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.15);padding:.6rem;z-index:400;font-size:.82rem">
-  <div id="ctxLabel" style="font-weight:600;margin-bottom:6px"></div>
-  <div style="display:flex;gap:6px;align-items:center">
-    <input type="number" id="ctxSize" min="10" style="width:70px;padding:.3rem .4rem;border:1px solid #e2e8f0;border-radius:6px">
-    <span id="ctxUnit" style="color:#718096">px</span>
-    <button class="btn btn-primary" onclick="applyCtxSize()" style="padding:.3rem .6rem">OK</button>
-  </div>
-  <button class="btn" onclick="resetCtxSize()" style="margin-top:6px;width:100%">Reinitialiser la taille</button>
-</div>
-
 <script>
-var STORAGE_KEY = 'plan_parc_test_v2';
-var ppc = 2, ncols = 60, nrows = 20;
+var SK = 'plan_parc_v3';
+var CELL = 10;
+var ncols = 100, nrows = 30, ppp = 2;
 var blocks = [];
+var scale = 1;
+var highlighted = [];
 var editing = null;
-var selDir = 'right';
-var colWidths = {};
-var rowHeights = {};
-var ctxTarget = null;
-var highlightedIndices = [];
-
-var stateHistory = [];
-var historyIndex = -1;
-var MAX_HISTORY = 50;
-
-var COLORS = ['#FAC775','#85B7EB','#F0997B','#97C459','#ED93B1','#AFA9EC','#B4B2A9','#5DCAA5'];
+var dragSel = new Set();
+var dragActive = false, dragR0 = 0, dragC0 = 0;
+var stateHist = [], histIdx = -1;
+var COLORS = ['#FAC775','#85B7EB','#F0997B','#97C459','#ED93B1','#AFA9EC','#B4B2A9','#5DCAA5','#F87171','#34D399'];
 var selColor = COLORS[0];
-var blockType = 'lot';
+var selDir = 'right';
 
-function pickBlockType(t){
-  blockType = t;
-  document.getElementById('type-lot').classList.toggle('sel', t==='lot');
-  document.getElementById('type-libre').classList.toggle('sel', t==='libre');
-  document.getElementById('lotFields').style.display = t==='lot' ? 'block' : 'none';
-  document.getElementById('libreFields').style.display = t==='libre' ? 'block' : 'none';
+// ── UTILS ──
+function today(){ var d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function pad(n){ return n<10?'0'+n:n; }
+function fmt(iso){ if(!iso)return ''; var p=iso.split('-'); return p[2]+'/'+p[1]+'/'+p[0].slice(2); }
+function gram(v){ if(!v)return ''; v=String(v).trim(); return /^\d+([.,]\d+)?$/.test(v)?v+'g':v; }
+function esc(s){ var d=document.createElement('div');d.textContent=s;return d.innerHTML; }
+function toast(m){ var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},1800); }
+function darken(hex){ var r=Math.max(0,parseInt(hex.slice(1,3),16)-80),g=Math.max(0,parseInt(hex.slice(3,5),16)-80),b=Math.max(0,parseInt(hex.slice(5,7),16)-80); return 'rgb('+r+','+g+','+b+')'; }
+
+// ── HISTORIQUE ──
+function snap(){ return JSON.stringify({ncols:ncols,nrows:nrows,ppp:ppp,blocks:blocks}); }
+function pushHist(){
+  var s=snap();
+  if(histIdx>=0&&stateHist[histIdx]===s)return;
+  history=stateHist.slice(0,histIdx+1);
+  stateHist.push(s);
+  if(stateHist.length>60)history.shift();
+  histIdx=stateHist.length-1;
+  updHistBtns();
+}
+function applySnap(s){ var d=JSON.parse(s);ncols=d.ncols;nrows=d.nrows;ppp=d.ppp;blocks=d.blocks;document.getElementById('inp-cols').value=ncols;document.getElementById('inp-rows').value=nrows;document.getElementById('inp-ppp').value=ppp;save(true);render(); }
+function undo(){ if(histIdx<=0)return;histIdx--;applySnap(stateHist[histIdx]);updHistBtns();toast('Annulé'); }
+function redo(){ if(histIdx>=stateHist.length-1)return;histIdx++;applySnap(stateHist[histIdx]);updHistBtns();toast('Rétabli'); }
+function updHistBtns(){ document.getElementById('undoBtn').disabled=histIdx<=0;document.getElementById('redoBtn').disabled=histIdx>=stateHist.length-1; }
+
+// ── PERSISTANCE ──
+function save(skip){ localStorage.setItem(SK,snap());if(!skip)pushHist(); }
+function load(){
+  try{ var d=JSON.parse(localStorage.getItem(SK)||'{}');ncols=d.ncols||100;nrows=d.nrows||30;ppp=d.ppp||2;blocks=d.blocks||[]; }catch(e){}
+  document.getElementById('inp-cols').value=ncols;
+  document.getElementById('inp-rows').value=nrows;
+  document.getElementById('inp-ppp').value=ppp;
+  pushHist();
 }
 
-function loadState(){
-  try{
-    var saved = localStorage.getItem(STORAGE_KEY);
-    if(saved){
-      var data = JSON.parse(saved);
-      ppc = data.ppc || 2;
-      ncols = data.ncols || 60;
-      nrows = data.nrows || 20;
-      blocks = data.blocks || [];
-      colWidths = data.colWidths || {};
-      rowHeights = data.rowHeights || {};
-    }
-  }catch(e){ console.error('Erreur chargement', e); }
-  document.getElementById('ppc').value = ppc;
-  document.getElementById('ncols').value = ncols;
-  document.getElementById('nrows').value = nrows;
-  pushHistory();
+// ── SETTINGS ──
+function applySettings(){
+  ncols=Math.min(500,Math.max(10,parseInt(document.getElementById('inp-cols').value)||100));
+  nrows=Math.min(300,Math.max(5,parseInt(document.getElementById('inp-rows').value)||30));
+  ppp=Math.max(0.1,parseFloat(document.getElementById('inp-ppp').value)||2);
+  save();render();
 }
 
-function saveState(skipHistory){
-  try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ppc:ppc, ncols:ncols, nrows:nrows, blocks:blocks, colWidths:colWidths, rowHeights:rowHeights}));
-  }catch(e){ console.error('Erreur sauvegarde', e); }
-  if(!skipHistory) pushHistory();
+// ── ZOOM ──
+function doZoom(d){
+  if(d===-99)scale=1; else scale=Math.max(0.2,Math.min(4,Math.round((scale+d)*10)/10));
+  document.getElementById('gridInner').style.transform='scale('+scale+')';
+  document.getElementById('zoom-label').textContent=Math.round(scale*100)+'%';
 }
 
-function snapshot(){
-  return JSON.stringify({ppc:ppc, ncols:ncols, nrows:nrows, blocks:blocks, colWidths:colWidths, rowHeights:rowHeights});
-}
-
-function pushHistory(){
-  var snap = snapshot();
-  if(historyIndex>=0 && stateHistory[historyIndex]===snap) return;
-  stateHistory = stateHistory.slice(0, historyIndex+1);
-  stateHistory.push(snap);
-  if(stateHistory.length>MAX_HISTORY) stateHistory.shift();
-  historyIndex = stateHistory.length-1;
-  updateUndoRedoButtons();
-}
-
-function applySnapshot(snap){
-  if(!snap) return;
-  try{
-    var data = JSON.parse(snap);
-    ppc = data.ppc; ncols = data.ncols; nrows = data.nrows;
-    blocks = data.blocks; colWidths = data.colWidths||{}; rowHeights = data.rowHeights||{};
-    document.getElementById('ppc').value = ppc;
-    document.getElementById('ncols').value = ncols;
-    document.getElementById('nrows').value = nrows;
-    localStorage.setItem(STORAGE_KEY, snap);
-    render();
-  }catch(e){ console.error('Erreur applySnapshot', e); }
-}
-
-function undo(){
-  if(historyIndex<=0) return;
-  historyIndex--;
-  applySnapshot(stateHistory[historyIndex]);
-  updateUndoRedoButtons();
-  showToast('Annule');
-}
-
-function redo(){
-  if(historyIndex>=stateHistory.length-1) return;
-  historyIndex++;
-  applySnapshot(stateHistory[historyIndex]);
-  updateUndoRedoButtons();
-  showToast('Retabli');
-}
-
-function updateUndoRedoButtons(){
-  var u = document.getElementById('undoBtn');
-  var r = document.getElementById('redoBtn');
-  if(u) u.disabled = historyIndex<=0;
-  if(r) r.disabled = historyIndex>=stateHistory.length-1;
-}
-
-function showToast(msg){
-  var t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(function(){ t.classList.remove('show'); }, 1800);
-}
-
-function applyGridSize(){
-  ppc = Math.max(0.1, parseFloat(document.getElementById('ppc').value)||2);
-  ncols = Math.min(parseInt(document.getElementById('ncols').value)||60, 300);
-  nrows = Math.min(parseInt(document.getElementById('nrows').value)||20, 200);
-  document.getElementById('ppc').value = ppc;
-  document.getElementById('ncols').value = ncols;
-  document.getElementById('nrows').value = nrows;
-  saveState();
-  render();
-}
-
-function deleteRow(r){
-  if(!confirm('Supprimer la rangee '+(r+1)+' et tous ses blocs ?')) return;
-  blocks = blocks.filter(function(b){ return b.row!==r; });
-  blocks.forEach(function(b){ if(b.row>r) b.row--; });
-  nrows = Math.max(1, nrows-1);
-  document.getElementById('nrows').value = nrows;
-  saveState();
-  render();
-}
-
-function blockPxWidth(b){
-  // Largeur en pixels du bloc selon poches/px
-  if(b.type==='libre') return Math.max(4, (b.nbcases||1) * (colWidths[b.col]||26));
-  return Math.max(4, Math.round((b.poches||1) / ppc));
-}
-
-function cellsOfBlock(b){
-  if(!b) return [];
-  var colW = colWidths[b.col] || 26;
-  var totalPx = blockPxWidth(b);
-  // Nombre de colonnes nécessaires pour couvrir totalPx
-  var span = Math.max(1, Math.ceil(totalPx / colW));
-  span = Math.min(span, 500);
-  var cells = [];
+// ── BLOCS ──
+function bpx(b){ return b.type==='libre'? Math.max(CELL,(b.nbcases||1)*CELL) : Math.max(CELL,Math.round((b.poches||1)/ppp)); }
+function bspan(b){ return Math.max(1,Math.min(500,Math.ceil(bpx(b)/CELL))); }
+function bcells(b){
+  var span=bspan(b),cells=[];
   for(var i=0;i<span;i++){
-    var r=b.row, c=b.col;
-    if(b.dir==='right') c=b.col+i;
-    else if(b.dir==='left') c=b.col-i;
-    else if(b.dir==='down') r=b.row+i;
-    else if(b.dir==='up') r=b.row-i;
+    var r=b.row,c=b.col;
+    if(b.dir==='right')c+=i; else if(b.dir==='left')c-=i;
+    else if(b.dir==='down')r+=i; else if(b.dir==='up')r-=i;
     cells.push([r,c]);
   }
   return cells;
 }
-
-function occupancyMap(){
-  var map = {};
-  blocks.forEach(function(b,bi){
-    cellsOfBlock(b).forEach(function(pair){
-      map[pair[0]+'_'+pair[1]] = bi;
-    });
-  });
-  return map;
+function occ(){
+  var m={};
+  blocks.forEach(function(b,bi){ bcells(b).forEach(function(p){ m[p[0]+'_'+p[1]]=bi; }); });
+  return m;
+}
+function blabel(b){
+  var p=[b.poches+'p'];
+  if(b.gram)p.push(gram(b.gram));
+  if(b.lot)p.push(b.lot);
+  if(b.poids)p.push(b.poids+'kg');
+  if(b.date)p.push(fmt(b.date));
+  return p.join(' ');
 }
 
-function darken(hex){
-  var r = Math.max(0,parseInt(hex.slice(1,3),16)-90);
-  var g = Math.max(0,parseInt(hex.slice(3,5),16)-90);
-  var b = Math.max(0,parseInt(hex.slice(5,7),16)-90);
-  return 'rgb('+r+','+g+','+b+')';
-}
-
-function escapeHtml(str){
-  var d = document.createElement('div');
-  d.textContent = str;
-  return d.innerHTML;
-}
-
-function formatDateShort(isoDate){
-  if(!isoDate) return '';
-  var parts = isoDate.split('-');
-  if(parts.length!==3) return isoDate;
-  return parts[2]+'/'+parts[1]+'/'+parts[0].slice(2);
-}
-
-function formatGram(val){
-  if(!val) return '';
-  var v = String(val).trim();
-  // Si c'est uniquement un nombre (entier ou decimal), on ajoute "g"
-  if(/^\d+([.,]\d+)?$/.test(v)){
-    return escapeHtml(v)+'g';
+// ── RENDER ──
+function render(){
+  var map=occ();
+  var html='<colgroup><col class="rowhead-col">';
+  for(var ci=0;ci<ncols;ci++)html+='<col>';
+  html+='</colgroup>';
+  html+='<thead><tr><th class="corner"></th>';
+  for(var c=0;c<ncols;c++)html+='<th class="ch">'+(c+1)+'</th>';
+  html+='</tr></thead><tbody>';
+  for(var r=0;r<nrows;r++){
+    html+='<tr><th class="rh">L'+(r+1)+'</th>';
+    var c2=0;
+    while(c2<ncols){
+      var bi=map[r+'_'+c2];
+      if(bi===undefined){
+        var ds=dragSel.has(r+'_'+c2);
+        html+='<td class="cell'+(ds?' drag-sel':'')+'" id="c'+r+'_'+c2+'" data-r="'+r+'" data-c="'+c2+'"></td>';
+        c2++;
+      } else {
+        var b=blocks[bi];
+        var cells=bcells(b);
+        var isVert=b.dir==='up'||b.dir==='down';
+        var isFirst=!cells.some(function(p){return map[p[0]+'_'+p[1]]===bi&&(p[0]<r||(p[0]===r&&p[1]<c2));});
+        if(!isFirst){c2++;continue;}
+        var isHL=highlighted.indexOf(bi)!==-1;
+        var label=b.type==='libre'?(b.text||''):blabel(b);
+        var fs=b.fsize||'10'; var fw=b.fweight||'700'; var ta=b.align||'center';
+        var bw=b.bwidth||'2'; var bs2=b.bstyle||'double'; var bc=b.bcolor||'#1a202c';
+        var style='background:'+b.color+'55;border:'+bw+'px '+bs2+' '+bc+';color:'+darken(b.color)+';font-size:'+fs+'px;font-weight:'+fw+';text-align:'+ta+';overflow:hidden;white-space:nowrap;text-overflow:ellipsis';
+        if(isHL)style+=';outline:2px solid #e63946;outline-offset:-2px;z-index:2';
+        var visibleCells=cells.filter(function(p){return p[0]===r;});
+        var span=isVert?1:visibleCells.length;
+        var w=isVert?CELL:span*CELL;
+        var h=isVert?cells.length*CELL:CELL;
+        style+=';width:'+w+'px;max-width:'+w+'px;height:'+h+'px;max-height:'+h+'px';
+        var inner=isVert?'<div style="writing-mode:vertical-rl;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden">'+esc(label)+'</div>':esc(label);
+        var spanAttr=isVert?'rowspan="'+cells.length+'"':'colspan="'+span+'"';
+        html+='<td class="blockcell'+(isHL?' highlighted':'')+'" '+spanAttr+' style="'+style+'" onclick="clickBlock('+bi+')" title="'+esc(label)+'">'+inner+'</td>';
+        if(isVert)c2++; else c2+=span;
+      }
+    }
+    html+='</tr>';
   }
-  // Sinon (K1, K2, F3, En1...) on laisse tel quel
-  return escapeHtml(v);
+  html+='</tbody>';
+  document.getElementById('grid').innerHTML=html;
+  updHistBtns();
 }
 
-function todayISO(){
-  var d = new Date();
-  var mm = String(d.getMonth()+1).padStart(2,'0');
-  var dd = String(d.getDate()).padStart(2,'0');
-  return d.getFullYear()+'-'+mm+'-'+dd;
-}
+// ── INTERACTIONS ──
+function clickBlock(bi){ openEditBlock(bi); }
 
-var searchedLot = null;
-var showDetail = false;
-
-function selectBlocksByIndices(indices){
-  highlightedIndices = indices;
-  render();
-  var gridWrap = document.querySelector('.grid-wrap');
-  if(gridWrap) gridWrap.scrollIntoView({behavior:'smooth', block:'start'});
-}
-
-function calcRefWeight(ref){
-  var matchingIdx = [];
-  blocks.forEach(function(b,i){
-    if(b.type !== 'libre' && b.gram && String(b.gram).trim().toUpperCase() === ref.toUpperCase()){
-      matchingIdx.push(i);
+function initDrag(){
+  var grid=document.getElementById('grid');
+  grid.addEventListener('mousedown',function(e){
+    if(e.button!==0)return;
+    var td=e.target.closest('td[data-r]');
+    if(!td)return;
+    e.preventDefault();
+    dragActive=true;
+    dragR0=+td.dataset.r; dragC0=+td.dataset.c;
+    dragSel.clear(); dragSel.add(dragR0+'_'+dragC0);
+    renderDrag();
+  });
+  document.addEventListener('mousemove',function(e){
+    if(!dragActive)return;
+    var td=document.elementFromPoint(e.clientX,e.clientY);
+    if(!td||!td.dataset||!td.dataset.r)return;
+    var r=+td.dataset.r,c=+td.dataset.c;
+    var r1=Math.min(dragR0,r),r2=Math.max(dragR0,r),c1=Math.min(dragC0,c),c2=Math.max(dragC0,c);
+    dragSel.clear();
+    for(var rr=r1;rr<=r2;rr++)for(var cc=c1;cc<=c2;cc++)dragSel.add(rr+'_'+cc);
+    renderDrag();
+  });
+  document.addEventListener('mouseup',function(){
+    if(!dragActive)return;
+    dragActive=false;
+    if(dragSel.size===0)return;
+    var sel=new Set(dragSel);
+    dragSel.clear();
+    renderDrag();
+    if(sel.size===1){
+      var k=Array.from(sel)[0].split('_');
+      openNewLot(+k[0],+k[1]);
+    } else {
+      var minR=999,minC=999;
+      sel.forEach(function(k){var p=k.split('_');minR=Math.min(minR,+p[0]);minC=Math.min(minC,+p[1]);});
+      openNewLibre(minR,minC,sel.size);
     }
   });
-  var el = document.getElementById('refWeightResult');
-  if(!matchingIdx.length){
-    el.style.display = 'block';
-    el.innerHTML = 'Aucune case '+escapeHtml(ref)+' trouvee sur le plan.';
-    return;
-  }
-
-  var totalPoches = 0, totalPoids = 0, sansPoids = 0;
-  var detail = matchingIdx.map(function(i){
-    var b = blocks[i];
-    var poches = parseInt(b.poches)||0;
-    var poidsUnitaire = parseFloat(b.poids)||0;
-    var poidsLigne = poidsUnitaire ? +(poches*poidsUnitaire).toFixed(1) : 0;
-    totalPoches += poches;
-    totalPoids += poidsLigne;
-    if(!poidsUnitaire) sansPoids += poches;
-    return {idx:i, lot:b.lot||'—', poches:poches, poidsUnitaire:poidsUnitaire, poidsLigne:poidsLigne};
-  });
-
-  var html = '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">';
-  html += '<div style="font-weight:600">'+escapeHtml(ref)+' — '+matchingIdx.length+' case'+(matchingIdx.length>1?'s':'')+' — '+totalPoches+' poches — <strong>'+totalPoids.toFixed(1)+' kg</strong> au total</div>';
-  html += '<button class="btn" onclick="selectBlocksByIndices('+JSON.stringify(matchingIdx)+')">Tout selectionner sur la grille</button>';
-  html += '</div>';
-  if(sansPoids>0){
-    html += '<div style="color:#e24b4a;font-size:.78rem;margin-bottom:8px">'+sansPoids+' poches sans poids/p renseigne (non comptees dans le total)</div>';
-  }
-  html += '<table style="width:100%;border-collapse:collapse;font-size:.8rem">';
-  html += '<thead><tr style="background:#f8f9fa"><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Lot</th><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Poches</th><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Poids/p</th><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Poids ligne</th></tr></thead><tbody>';
-  detail.forEach(function(d){
-    html += '<tr style="cursor:pointer" onclick="selectBlocksByIndices(['+d.idx+'])" onmouseover="this.style.background=\'#f0f9ff\'" onmouseout="this.style.background=\'\'"><td style="padding:6px 8px;border-bottom:1px solid #edf0f3">'+escapeHtml(d.lot)+'</td><td style="padding:6px 8px;border-bottom:1px solid #edf0f3;font-weight:600">'+d.poches+'p</td><td style="padding:6px 8px;border-bottom:1px solid #edf0f3">'+(d.poidsUnitaire?d.poidsUnitaire+'kg':'—')+'</td><td style="padding:6px 8px;border-bottom:1px solid #edf0f3;font-weight:600">'+(d.poidsLigne?d.poidsLigne+'kg':'—')+'</td></tr>';
-  });
-  html += '</tbody></table>';
-
-  el.style.display = 'block';
-  el.innerHTML = html;
-}
-
-function isVideBlock(b){
-  // Detecte un emplacement "vide" : lot/grammage/texte libre contenant "v" isole
-  // ex: "50v", "v", "30 v" -> vide. Mais "K2" ou "02S25" -> pas vide.
-  var fields = [b.lot, b.gram, b.libretext];
-  return fields.some(function(f){
-    if(!f) return false;
-    var v = String(f).trim().toLowerCase();
-    return v === 'v' || /^\d*\s*v$/.test(v);
+  // zoom molette
+  document.getElementById('gridWrap').addEventListener('wheel',function(e){
+    if(e.ctrlKey||e.metaKey){e.preventDefault();doZoom(e.deltaY<0?0.15:-0.15);}
+  },{passive:false});
+  // keyboard
+  document.addEventListener('keydown',function(e){
+    if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undo();}
+    if((e.ctrlKey||e.metaKey)&&(e.key==='y'||(e.shiftKey&&e.key==='Z'))){e.preventDefault();redo();}
   });
 }
 
-function calcVides(){
-  var videIdx = [];
-  blocks.forEach(function(b,i){ if(isVideBlock(b)) videIdx.push(i); });
-  var el = document.getElementById('videResult');
-  if(!videIdx.length){
-    el.style.display = 'block';
-    el.innerHTML = 'Aucun emplacement vide detecte (recherchez un lot/texte contenant uniquement "v" ou "Xv").';
-    return;
-  }
-  var total = 0;
-  var html = '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">';
-  var rows = videIdx.map(function(i){
-    var b = blocks[i];
-    var poches = parseInt(b.poches)||parseInt(b.nbcases)||0;
-    total += poches;
-    return {idx:i, poches:poches, label:(b.lot||b.gram||b.libretext||'v')};
-  });
-  html += '<div><strong>'+videIdx.length+'</strong> emplacement'+(videIdx.length>1?'s':'')+' vide'+(videIdx.length>1?'s':'')+' — <strong>'+total+' poches</strong> disponibles au total.</div>';
-  html += '<button class="btn" onclick="selectBlocksByIndices('+JSON.stringify(videIdx)+')">Tout selectionner sur la grille</button>';
-  html += '</div>';
-  html += '<table style="width:100%;border-collapse:collapse;font-size:.8rem">';
-  html += '<thead><tr style="background:#f8f9fa"><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Repere</th><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Poches</th></tr></thead><tbody>';
-  rows.forEach(function(d){
-    html += '<tr style="cursor:pointer" onclick="selectBlocksByIndices(['+d.idx+'])" onmouseover="this.style.background=\'#f0f9ff\'" onmouseout="this.style.background=\'\'"><td style="padding:6px 8px;border-bottom:1px solid #edf0f3">'+escapeHtml(String(d.label))+'</td><td style="padding:6px 8px;border-bottom:1px solid #edf0f3;font-weight:600">'+d.poches+'p</td></tr>';
-  });
-  html += '</tbody></table>';
-  el.style.display = 'block';
-  el.innerHTML = html;
+function renderDrag(){
+  document.querySelectorAll('td.drag-sel').forEach(function(el){el.classList.remove('drag-sel');});
+  dragSel.forEach(function(k){var el=document.getElementById('c'+k);if(el)el.classList.add('drag-sel');});
 }
 
-function searchLot(){
-  var val = document.getElementById('searchLot').value.trim();
-  if(!val){ clearSearch(); return; }
-  searchedLot = val;
-  showDetail = false;
-  highlightedIndices = blocks.map(function(b,i){return i;}).filter(function(i){
-    return blocks[i].type!=='libre' && blocks[i].lot===searchedLot;
+// ── SWATCHES ──
+function buildSw(id,onPick){
+  document.getElementById(id).innerHTML=COLORS.map(function(c){
+    return '<div class="swatch'+(c===selColor?' sel':'')+'" style="background:'+c+'" onclick="'+onPick+'(\''+c+'\')"></div>';
+  }).join('');
+}
+function pickLotColor(c){selColor=c;buildSw('lot-swatches','pickLotColor');}
+function pickLibreColor(c){selColor=c;buildSw('libre-swatches','pickLibreColor');}
+
+// ── DIR BUTTONS ──
+function setDir(d){
+  selDir=d;
+  ['up','down','left','right'].forEach(function(x){
+    var b=document.getElementById('d-'+x);
+    if(b)b.className='btn'+(x===d?' btn-primary':'');
   });
-  renderSearchResult();
+}
+
+// ── OPEN MODALS ──
+function openNewLot(r,c){
+  editing={isNew:true,row:r,col:c};
+  document.getElementById('lot-title').textContent='Nouveau lot';
+  document.getElementById('l-poches').value=10;
+  document.getElementById('l-gram').value='';
+  document.getElementById('l-lot').value='';
+  document.getElementById('l-poids').value='';
+  document.getElementById('l-date').value=today();
+  document.getElementById('l-notes').value='';
+  document.getElementById('l-fsize').value='10';
+  document.getElementById('l-fweight').value='700';
+  document.getElementById('l-align').value='center';
+  document.getElementById('l-bwidth').value='2';
+  document.getElementById('l-bstyle').value='double';
+  document.getElementById('l-bcolor').value='#1a202c';
+  selColor=COLORS[Math.floor(Math.random()*COLORS.length)];
+  selDir='right';
+  buildSw('lot-swatches','pickLotColor');
+  setDir('right');
+  document.getElementById('del-lot').style.display='none';
+  document.getElementById('modalLot').classList.add('open');
+}
+
+function openNewLibre(r,c,nb){
+  editing={isNew:true,row:r,col:c,nbcases:nb};
+  document.getElementById('libre-info').textContent=nb+' case'+(nb>1?'s':'')+' sélectionnée'+(nb>1?'s':'')+' · départ L'+(r+1)+' col '+(c+1);
+  document.getElementById('libre-info').style.display='block';
+  document.getElementById('fr-text').value='';
+  document.getElementById('fr-fsize').value='10';
+  document.getElementById('fr-fweight').value='700';
+  document.getElementById('fr-align').value='center';
+  document.getElementById('fr-bwidth').value='2';
+  document.getElementById('fr-bstyle').value='double';
+  document.getElementById('fr-bcolor').value='#1a202c';
+  selColor=COLORS[Math.floor(Math.random()*COLORS.length)];
+  buildSw('libre-swatches','pickLibreColor');
+  document.getElementById('del-libre').style.display='none';
+  document.getElementById('modalLibre').classList.add('open');
+}
+
+function openEditBlock(bi){
+  var b=blocks[bi];
+  editing={isNew:false,bi:bi};
+  selColor=b.color; selDir=b.dir||'right';
+  if(b.type==='libre'){
+    document.getElementById('libre-info').style.display='none';
+    document.getElementById('fr-text').value=b.text||'';
+    document.getElementById('fr-fsize').value=b.fsize||'10';
+    document.getElementById('fr-fweight').value=b.fweight||'700';
+    document.getElementById('fr-align').value=b.align||'center';
+    document.getElementById('fr-bwidth').value=b.bwidth||'2';
+    document.getElementById('fr-bstyle').value=b.bstyle||'double';
+    document.getElementById('fr-bcolor').value=b.bcolor||'#1a202c';
+    buildSw('libre-swatches','pickLibreColor');
+    document.getElementById('del-libre').style.display='inline-block';
+    document.getElementById('modalLibre').classList.add('open');
+  } else {
+    document.getElementById('lot-title').textContent='Modifier le lot';
+    document.getElementById('l-poches').value=b.poches;
+    document.getElementById('l-gram').value=b.gram||'';
+    document.getElementById('l-lot').value=b.lot||'';
+    document.getElementById('l-poids').value=b.poids||'';
+    document.getElementById('l-date').value=b.date||'';
+    document.getElementById('l-notes').value=b.notes||'';
+    document.getElementById('l-fsize').value=b.fsize||'10';
+    document.getElementById('l-fweight').value=b.fweight||'700';
+    document.getElementById('l-align').value=b.align||'center';
+    document.getElementById('l-bwidth').value=b.bwidth||'2';
+    document.getElementById('l-bstyle').value=b.bstyle||'double';
+    document.getElementById('l-bcolor').value=b.bcolor||'#1a202c';
+    buildSw('lot-swatches','pickLotColor');
+    setDir(b.dir||'right');
+    document.getElementById('del-lot').style.display='inline-block';
+    document.getElementById('modalLot').classList.add('open');
+  }
+}
+
+function closeModal(id){ document.getElementById(id).classList.remove('open'); editing=null; }
+
+// ── SAVE BLOCS ──
+function saveLot(){
+  if(!editing)return;
+  var data={
+    type:'lot', row:editing.row!==undefined?editing.row:blocks[editing.bi].row,
+    col:editing.col!==undefined?editing.col:blocks[editing.bi].col,
+    dir:selDir, color:selColor,
+    poches:parseInt(document.getElementById('l-poches').value)||1,
+    gram:document.getElementById('l-gram').value.trim(),
+    lot:document.getElementById('l-lot').value.trim(),
+    poids:document.getElementById('l-poids').value,
+    date:document.getElementById('l-date').value,
+    notes:document.getElementById('l-notes').value.trim(),
+    fsize:document.getElementById('l-fsize').value,
+    fweight:document.getElementById('l-fweight').value,
+    align:document.getElementById('l-align').value,
+    bwidth:document.getElementById('l-bwidth').value,
+    bstyle:document.getElementById('l-bstyle').value,
+    bcolor:document.getElementById('l-bcolor').value
+  };
+  if(editing.isNew)blocks.push(data); else blocks[editing.bi]=data;
+  closeModal('modalLot');save();render();toast('Bloc enregistré');
+}
+
+function saveLibre(){
+  if(!editing)return;
+  var row=editing.row!==undefined?editing.row:blocks[editing.bi].row;
+  var col=editing.col!==undefined?editing.col:blocks[editing.bi].col;
+  var nb=editing.nbcases||blocks[editing.bi].nbcases||1;
+  var data={
+    type:'libre', row:row, col:col, dir:'right', color:selColor, nbcases:nb,
+    text:document.getElementById('fr-text').value.trim(),
+    fsize:document.getElementById('fr-fsize').value,
+    fweight:document.getElementById('fr-fweight').value,
+    align:document.getElementById('fr-align').value,
+    bwidth:document.getElementById('fr-bwidth').value,
+    bstyle:document.getElementById('fr-bstyle').value,
+    bcolor:document.getElementById('fr-bcolor').value
+  };
+  if(editing.isNew)blocks.push(data); else blocks[editing.bi]=data;
+  closeModal('modalLibre');save();render();toast('Zone enregistrée');
+}
+
+function deleteLot(){ if(!editing||editing.isNew)return;blocks.splice(editing.bi,1);closeModal('modalLot');save();render();toast('Bloc supprimé'); }
+function deleteLibre(){ if(!editing||editing.isNew)return;blocks.splice(editing.bi,1);closeModal('modalLibre');save();render();toast('Zone supprimée'); }
+
+// ── RECHERCHE / CALCULS ──
+function doSearch(){
+  var val=document.getElementById('inp-search').value.trim();
+  if(!val){clearSearch();return;}
+  highlighted=[];
+  blocks.forEach(function(b,bi){if(b.type==='lot'&&b.lot===val)highlighted.push(bi);});
+  var tot=highlighted.reduce(function(s,bi){return s+(parseInt(blocks[bi].poches)||0);},0);
+  showRes('<strong>'+esc(val)+'</strong> — '+highlighted.length+' bloc'+(highlighted.length>1?'s':'')+' — <strong>'+tot+' poches</strong>');
   render();
 }
 
 function clearSearch(){
-  searchedLot = null;
-  showDetail = false;
-  highlightedIndices = [];
-  document.getElementById('searchLot').value = '';
-  document.getElementById('searchResult').style.display = 'none';
-  document.getElementById('videResult').style.display = 'none';
-  document.getElementById('refWeightResult').style.display = 'none';
+  highlighted=[];document.getElementById('inp-search').value='';
+  document.getElementById('results').classList.remove('open');
   render();
 }
 
-function toggleDetail(){
-  showDetail = !showDetail;
-  renderSearchResult();
+function calcVides(){
+  var idx=[];
+  blocks.forEach(function(b,bi){
+    var fields=[b.lot,b.gram,b.text];
+    if(fields.some(function(f){if(!f)return false;var v=String(f).trim().toLowerCase();return v==='v'||/^\d*\s*v$/.test(v);}))idx.push(bi);
+  });
+  if(!idx.length){showRes('Aucun emplacement vide détecté.');return;}
+  var tot=idx.reduce(function(s,bi){return s+(parseInt(blocks[bi].poches)||parseInt(blocks[bi].nbcases)||0);},0);
+  highlighted=idx;render();
+  var rows=idx.map(function(bi){return '<tr onclick="highlighted=['+bi+'];render()"><td>L'+(blocks[bi].row+1)+'</td><td>'+(blocks[bi].poches||blocks[bi].nbcases||0)+'p</td></tr>';}).join('');
+  showRes('<div style="display:flex;align-items:center;justify-content:space-between"><strong>'+idx.length+' emplacement'+(idx.length>1?'s':'')+' vide — '+tot+' poches</strong><button class="btn" onclick="highlighted='+JSON.stringify(idx)+';render()">Tout sélectionner</button></div><table><tr><th>Rangée</th><th>Poches</th></tr>'+rows+'</table>');
 }
 
-var sortColumn = null;
-var sortAsc = true;
-
-function sortDetailBy(col){
-  if(sortColumn === col){
-    sortAsc = !sortAsc;
-  } else {
-    sortColumn = col;
-    sortAsc = true;
-  }
-  renderSearchResult();
-}
-
-function sortArrow(col){
-  if(sortColumn !== col) return '<span style="color:#cbd5e0">⇕</span>';
-  return sortAsc ? '<span style="color:#0ea5e9">▲</span>' : '<span style="color:#0ea5e9">▼</span>';
-}
-
-function renderSearchResult(){
-  var el = document.getElementById('searchResult');
-  if(!searchedLot){ el.style.display='none'; return; }
-
-  var matching = blocks.filter(function(b){ return b.type!=='libre' && b.lot===searchedLot; });
-  if(!matching.length){
-    el.style.display='block';
-    el.innerHTML = '<strong>'+escapeHtml(searchedLot)+'</strong> : aucune case trouvee.';
-    return;
-  }
-
-  var total = matching.reduce(function(s,b){ return s + (parseInt(b.poches)||0); }, 0);
-
-  var html = '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">';
-  html += '<div><strong>'+escapeHtml(searchedLot)+'</strong> — '+matching.length+' case'+(matching.length>1?'s':'')+' — <strong>'+total+' poches</strong> au total</div>';
-  html += '<button class="btn" onclick="toggleDetail()">'+(showDetail?'Masquer le detail':'Detail par grammage/reference')+'</button>';
-  html += '</div>';
-
-  if(showDetail){
-    var groups = {};
-    matching.forEach(function(b){
-      var key = (b.gram||'—')+'|'+(b.poids||'')+'|'+(b.date||'');
-      if(!groups[key]) groups[key] = {gram:b.gram||'—', poids:b.poids||'', date:b.date||'', poches:0};
-      groups[key].poches += parseInt(b.poches)||0;
-    });
-    var rows = Object.values(groups).map(function(g){
-      var poidsUnitaire = parseFloat(g.poids)||0;
-      g.poidsTotal = poidsUnitaire ? +(poidsUnitaire * g.poches).toFixed(1) : 0;
-      return g;
-    });
-
-    if(sortColumn){
-      rows.sort(function(a,b){
-        var va, vb;
-        if(sortColumn==='gram'){ va=a.gram; vb=b.gram; }
-        else if(sortColumn==='poches'){ va=a.poches; vb=b.poches; }
-        else if(sortColumn==='poidsTotal'){ va=a.poidsTotal; vb=b.poidsTotal; }
-        else if(sortColumn==='date'){ va=a.date||''; vb=b.date||''; }
-        if(typeof va === 'string'){
-          var cmp = va.localeCompare(vb, 'fr', {numeric:true});
-          return sortAsc ? cmp : -cmp;
-        }
-        return sortAsc ? va-vb : vb-va;
-      });
-    }
-
-    html += '<table style="width:100%;border-collapse:collapse;margin-top:10px;font-size:.82rem">';
-    html += '<thead><tr style="background:#f8f9fa">'+
-      '<th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;cursor:pointer" onclick="sortDetailBy(\'gram\')">Grammage / Reference '+sortArrow('gram')+'</th>'+
-      '<th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;cursor:pointer" onclick="sortDetailBy(\'poches\')">Poches '+sortArrow('poches')+'</th>'+
-      '<th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0">Poids/p</th>'+
-      '<th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;cursor:pointer" onclick="sortDetailBy(\'poidsTotal\')">Poids total '+sortArrow('poidsTotal')+'</th>'+
-      '<th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;cursor:pointer" onclick="sortDetailBy(\'date\')">Date '+sortArrow('date')+'</th>'+
-      '</tr></thead><tbody>';
-    rows.forEach(function(g){
-      html += '<tr>'+
-        '<td style="padding:6px 8px;border-bottom:1px solid #edf0f3">'+formatGram(g.gram==='—'?'':g.gram)+(g.gram==='—'?'—':'')+'</td>'+
-        '<td style="padding:6px 8px;border-bottom:1px solid #edf0f3;font-weight:600">'+g.poches+'p</td>'+
-        '<td style="padding:6px 8px;border-bottom:1px solid #edf0f3">'+(g.poids?g.poids+'kg':'—')+'</td>'+
-        '<td style="padding:6px 8px;border-bottom:1px solid #edf0f3;font-weight:600">'+(g.poidsTotal?g.poidsTotal+'kg':'—')+'</td>'+
-        '<td style="padding:6px 8px;border-bottom:1px solid #edf0f3">'+(g.date?formatDateShort(g.date):'—')+'</td>'+
-        '</tr>';
-    });
-    html += '</tbody></table>';
-  }
-
-  el.style.display='block';
-  el.innerHTML = html;
-}
-
-function render(){
-  try{
-    renderInner();
-  }catch(e){
-    console.error('Erreur de rendu', e);
-    var el = document.getElementById('gridTable');
-    if(el) el.outerHTML = '<div style="padding:2rem;text-align:center;color:#e24b4a">Erreur d\'affichage : '+escapeHtml(e.message)+'<br><br><button class="btn btn-danger" onclick="resetAll()">Reinitialiser le plan</button></div>';
-  }
-}
-
-function renderInner(){
-  var occ = occupancyMap();
-  var html = '<colgroup><col style="width:36px">';
-  for(var ci=0;ci<ncols;ci++){
-    html += '<col style="width:'+(colWidths[ci]||26)+'px">';
-  }
-  html += '</colgroup>';
-  html += '<thead><tr><th class="corner"></th>';
-  for(var c=0;c<ncols;c++){
-    html += '<th class="colhead" oncontextmenu="openColCtx(event,'+c+')">'+(c+1)+'</th>';
-  }
-  html += '</tr></thead><tbody>';
-
-  for(var r=0;r<nrows;r++){
-    var rh = (rowHeights[r]||26);
-    html += '<tr style="height:'+rh+'px"><th class="rowhead" oncontextmenu="openRowCtx(event,'+r+')">L'+(r+1)+' <span class="rowdel" onclick="deleteRow('+r+')" title="Supprimer">x</span></th>';
-    var c2 = 0;
-    while(c2 < ncols){
-      var bi = occ[r+'_'+c2];
-      if(bi === undefined){
-        html += '<td class="cell" onclick="openNew('+r+','+c2+')"></td>';
-        c2++;
-      } else {
-        var b = blocks[bi];
-        var cells = cellsOfBlock(b);
-        var isVertical = (b.dir === 'up' || b.dir === 'down');
-        var isFirstCellOfBlock = !cells.some(function(pair){
-          return occ[pair[0]+'_'+pair[1]]===bi && (pair[0]<r || (pair[0]===r && pair[1]<c2));
-        });
-        if(!isFirstCellOfBlock){
-          c2++;
-          continue;
-        }
-        var label, tipParts;
-        if(b.type === 'libre'){
-          label = escapeHtml(b.libretext||'');
-          tipParts = [escapeHtml(b.libretext||'')];
-        } else {
-          var part1 = b.poches+'p'+(b.gram?' '+formatGram(b.gram):'')+(b.lot?' '+escapeHtml(b.lot):'');
-          var part2 = b.poids ? b.poids+'kg' : '';
-          var part3 = b.date ? formatDateShort(b.date) : '';
-          var labelParts = [part1];
-          if(part2) labelParts.push(part2);
-          if(part3) labelParts.push(part3);
-          label = labelParts.join(' - ');
-          tipParts = labelParts.slice();
-          if(b.notes) tipParts.push(escapeHtml(b.notes));
-        }
-        var fs = b.fontsize || '12';
-        var fw = b.fontweight || '700';
-        var ta = b.textalign || 'center';
-        var bw = b.borderwidth || '2';
-        var bs = b.borderstyle || 'solid';
-        var bc = b.bordercolor || '#1a202c';
-        var isHighlighted = highlightedIndices.indexOf(bi) !== -1;
-        var cellStyle = 'background:'+b.color+'55;color:'+darken(b.color)+
-          ';font-size:'+fs+'px;font-weight:'+fw+';text-align:'+ta+
-          ';border:'+bw+'px '+bs+' '+bc;
-        if(isHighlighted){
-          cellStyle += ';outline:3px solid #e63946;outline-offset:-1px;box-shadow:0 0 0 3px #e6394655';
-        }
-        var spanAttr, innerHtml, sizeStyle;
-        if(isVertical){
-          var span = cells.length;
-          spanAttr = 'rowspan="'+span+'"';
-          var totalHeight = 0;
-          for(var hi=0; hi<span; hi++){
-            var rr = (b.dir==='down') ? (b.row+hi) : (b.row-hi);
-            totalHeight += (rowHeights[rr]||26);
-          }
-          var colW2 = (colWidths[b.col]||26);
-          var exactPx = Math.round((b.poches||1)/ppc);
-          sizeStyle = 'width:'+colW2+'px;max-width:'+colW2+'px;height:'+exactPx+'px;max-height:'+exactPx+'px';
-          cellStyle += ';padding:4px 2px;'+sizeStyle;
-          innerHtml = '<div style="writing-mode:vertical-rl;text-orientation:mixed;height:100%;width:100%;display:flex;align-items:center;justify-content:'+(ta==='left'?'flex-start':ta==='right'?'flex-end':'center')+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+label+'</div>';
-        } else {
-          spanAttr = 'colspan="'+cells.length+'"';
-          var exactW = blockPxWidth(b);
-          var rowH = (rowHeights[r]||26);
-          sizeStyle = 'width:'+exactW+'px;max-width:'+exactW+'px;height:'+rowH+'px;max-height:'+rowH+'px';
-          cellStyle += ';'+sizeStyle;
-          innerHtml = label;
-        }
-        html += '<td class="cell blockcell" '+spanAttr+' style="'+cellStyle+'" onclick="openEdit('+bi+')" title="'+tipParts.join(' - ')+'">'+innerHtml+'</td>';
-        if(!isVertical) c2 += cells.length;
-        else c2++;
-      }
-    }
-    html += '</tr>';
-  }
-  html += '</tbody>';
-  document.getElementById('gridTable').innerHTML = html;
-}
-
-function buildSwatches(){
-  document.getElementById('swatches').innerHTML = COLORS.map(function(c){
-    return '<div class="swatch'+(c===selColor?' sel':'')+'" style="background:'+c+'" onclick="pickColor(\''+c+'\')"></div>';
+function calcRef(ref){
+  var idx=[];
+  blocks.forEach(function(b,bi){if(b.type==='lot'&&b.gram&&String(b.gram).trim().toUpperCase()===ref.toUpperCase())idx.push(bi);});
+  if(!idx.length){showRes('Aucune case '+esc(ref)+' trouvée.');return;}
+  var totP=0,totKg=0;
+  var rows=idx.map(function(bi){
+    var b=blocks[bi];var p=parseInt(b.poches)||0;var kg=parseFloat(b.poids)||0;var l=kg?+(p*kg).toFixed(1):0;
+    totP+=p;totKg+=l;
+    return '<tr onclick="highlighted=['+bi+'];render()"><td>'+esc(b.lot||'—')+'</td><td>'+p+'p</td><td>'+(kg?kg+'kg':'—')+'</td><td>'+(l?l+'kg':'—')+'</td></tr>';
   }).join('');
+  highlighted=idx;render();
+  showRes('<div style="display:flex;align-items:center;justify-content:space-between"><strong>'+esc(ref)+' — '+totP+' poches — '+totKg.toFixed(1)+' kg</strong><button class="btn" onclick="highlighted='+JSON.stringify(idx)+';render()">Tout sélectionner</button></div><table><tr><th>Lot</th><th>Poches</th><th>Poids/p</th><th>Total</th></tr>'+rows+'</table>');
 }
 
-function pickColor(c){
-  selColor = c;
-  buildSwatches();
+function showRes(html){
+  document.getElementById('res-content').innerHTML=html;
+  document.getElementById('results').classList.add('open');
 }
 
-function buildDirButtons(r,col,isNew){
-  ['up','down','left','right'].forEach(function(d){
-    var btn = document.getElementById('dir-'+d);
-    btn.classList.toggle('sel', d===selDir);
-    var disabled = false;
-    if(isNew){
-      if(d==='up' && r===0) disabled = true;
-      if(d==='left' && col===0) disabled = true;
-    }
-    btn.disabled = disabled;
-  });
-}
-
-function pickDir(d){
-  var btn = document.getElementById('dir-'+d);
-  if(btn.disabled) return;
-  selDir = d;
-  buildDirButtons(editing.row, editing.col, editing.isNew);
-}
-
-function openNew(r,c){
-  editing = {row:r, col:c, isNew:true};
-  document.getElementById('m-lot').value='';
-  document.getElementById('m-poches').value=ppc;
-  document.getElementById('m-gram').value='';
-  document.getElementById('m-poids').value='';
-  document.getElementById('m-date').value=todayISO();
-  document.getElementById('m-notes').value='';
-  document.getElementById('m-libretext').value='';
-  document.getElementById('m-nbcases').value='1';
-  document.getElementById('m-fontsize').value='12';
-  document.getElementById('m-fontweight').value='700';
-  document.getElementById('m-textalign').value='center';
-  document.getElementById('m-borderwidth').value='2';
-  document.getElementById('m-borderstyle').value='double';
-  document.getElementById('m-bordercolor').value='#1a202c';
-  pickBlockType('lot');
-  selColor = COLORS[Math.floor(Math.random()*COLORS.length)];
-  selDir = 'right';
-  buildSwatches();
-  buildDirButtons(r,c,true);
-  document.getElementById('delBtn').style.display='none';
-  document.getElementById('modalBg').classList.add('open');
-}
-
-function openEdit(bi){
-  var b = blocks[bi];
-  editing = {blockIdx:bi, row:b.row, col:b.col, isNew:false};
-  document.getElementById('m-lot').value=b.lot||'';
-  document.getElementById('m-poches').value=b.poches||ppc;
-  document.getElementById('m-gram').value=b.gram||'';
-  document.getElementById('m-poids').value=b.poids||'';
-  document.getElementById('m-date').value=b.date||'';
-  document.getElementById('m-notes').value=b.notes||'';
-  document.getElementById('m-libretext').value=b.libretext||'';
-  document.getElementById('m-nbcases').value=b.nbcases||1;
-  document.getElementById('m-fontsize').value=b.fontsize||'12';
-  document.getElementById('m-fontweight').value=b.fontweight||'700';
-  document.getElementById('m-textalign').value=b.textalign||'center';
-  document.getElementById('m-borderwidth').value=b.borderwidth||'2';
-  document.getElementById('m-borderstyle').value=b.borderstyle||'double';
-  document.getElementById('m-bordercolor').value=b.bordercolor||'#1a202c';
-  pickBlockType(b.type||'lot');
-  selColor = b.color;
-  selDir = b.dir;
-  buildSwatches();
-  buildDirButtons(b.row, b.col, false);
-  document.getElementById('delBtn').style.display='inline-flex';
-  document.getElementById('modalBg').classList.add('open');
-}
-
-function closeModal(){
-  document.getElementById('modalBg').classList.remove('open');
-  editing = null;
-}
-
-function saveBlock(){
-  if(!editing) return;
-  var data = {
-    row: editing.row,
-    col: editing.col,
-    dir: selDir,
-    type: blockType,
-    lot: document.getElementById('m-lot').value.trim(),
-    poches: parseInt(document.getElementById('m-poches').value)||ppc,
-    gram: document.getElementById('m-gram').value.trim(),
-    poids: document.getElementById('m-poids').value,
-    date: document.getElementById('m-date').value,
-    notes: document.getElementById('m-notes').value.trim(),
-    libretext: document.getElementById('m-libretext').value.trim(),
-    nbcases: parseInt(document.getElementById('m-nbcases').value)||1,
-    color: selColor,
-    fontsize: document.getElementById('m-fontsize').value,
-    fontweight: document.getElementById('m-fontweight').value,
-    textalign: document.getElementById('m-textalign').value,
-    borderwidth: document.getElementById('m-borderwidth').value,
-    borderstyle: document.getElementById('m-borderstyle').value,
-    bordercolor: document.getElementById('m-bordercolor').value
-  };
-  if(editing.isNew){
-    blocks.push(data);
-  } else {
-    blocks[editing.blockIdx] = data;
-  }
-  closeModal();
-  saveState();
-  render();
-  showToast('Bloc enregistre');
-}
-
-function deleteBlock(){
-  if(!editing || editing.isNew) return;
-  blocks.splice(editing.blockIdx,1);
-  closeModal();
-  saveState();
-  render();
-  showToast('Bloc supprime');
-}
-
+// ── RESET / EXPORT / IMPORT ──
 function resetAll(){
-  if(!confirm('Effacer TOUT le plan ? Cette action est irreversible.')) return;
-  blocks = [];
-  saveState();
-  render();
-  showToast('Plan reinitialise');
+  if(!confirm('Tout effacer ?'))return;
+  blocks=[];highlighted=[];save();render();toast('Plan effacé');
 }
-
-function exportJSON(){
-  var data = {ppc:ppc, ncols:ncols, nrows:nrows, blocks:blocks};
-  var blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.href = url;
-  a.download = 'plan-parc-test.json';
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('Export telecharge');
+function exportData(){
+  var blob=new Blob([JSON.stringify({ncols:ncols,nrows:nrows,ppp:ppp,blocks:blocks},null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='plan-parc.json';a.click();
+  toast('Export téléchargé');
 }
-
-// ─── IMPORT GOOGLE SHEET ───
-var SHEETS_API_KEY = 'AIzaSyC3uvsTue-0hlzKUYC9emPnOoCkIhA7N5s';
-var COLORS_CYCLE_IDX = 0;
-
-function openSheetImport(){
-  document.getElementById('sheetUrl').value = '';
-  document.getElementById('sheetLieu').value = '';
-  document.getElementById('sheetRowOffset').value = '0';
-  document.getElementById('sheetImportStatus').textContent = '';
-  document.getElementById('sheetImportOverlay').classList.add('open');
-}
-
-function closeSheetImport(){
-  document.getElementById('sheetImportOverlay').classList.remove('open');
-}
-
-function extractSheetId(input){
-  var m = input.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  if(m) return m[1];
-  if(/^[a-zA-Z0-9_-]{20,}$/.test(input.trim())) return input.trim();
-  return null;
-}
-
-function parseSheetCell(cell){
-  if(!cell || typeof cell !== 'string') return null;
-  var dateMatch = cell.match(/(\d{2})\/(\d{2})\/(\d{2,4})/);
-  var pochesMatch = cell.match(/^\s*(\d+)\s*p\b/i);
-  if(!pochesMatch) return null;
-  var poches = parseInt(pochesMatch[1]);
-  if(!poches) return null;
-
-  var gramMatch = cell.match(/\b(\d+)\s*g\b/i);
-  var calibreMatch = !gramMatch ? cell.match(/\b(K[1-5](?:[/-]K[1-5])?|En[1-4]|F[1-4])\b/i) : null;
-  var gram = gramMatch ? gramMatch[1] : (calibreMatch ? calibreMatch[1] : '');
-
-  var poidsMatch = cell.match(/(\d+[,.]\d+|\d+)\s*kg/i);
-  var poids = poidsMatch ? poidsMatch[1].replace(',','.') : '';
-
-  var lotMatch = cell.match(/\b(\d{1,3}[A-Z]\d{2}[A-Z]{0,2})\b/i);
-  var lot = lotMatch ? lotMatch[1] : '';
-  if(!lot){
-    var wordsMatch = cell.match(/\b[A-Za-zÀ-ÿ]{3,}\b/g) || [];
-    var stopWords = ['kg','kgp','piquet','attention','acces','tracteur','ne','pas','sortir','par','le','haut','des','files'];
-    var candidate = wordsMatch.find(function(w){ return stopWords.indexOf(w.toLowerCase())===-1; });
-    lot = candidate || '';
-  }
-
-  var dateIso = '';
-  if(dateMatch){
-    var yyyy = dateMatch[3].length===2 ? '20'+dateMatch[3] : dateMatch[3];
-    dateIso = yyyy+'-'+dateMatch[2]+'-'+dateMatch[1];
-  }
-
-  return {poches:poches, gram:gram, poids:poids, lot:lot, date:dateIso};
-}
-
-function runSheetImport(){
-  var urlInput = document.getElementById('sheetUrl').value.trim();
-  var lieu = document.getElementById('sheetLieu').value.trim();
-  var rowOffset = parseInt(document.getElementById('sheetRowOffset').value)||0;
-  var statusEl = document.getElementById('sheetImportStatus');
-
-  var sheetId = extractSheetId(urlInput);
-  if(!sheetId){
-    statusEl.textContent = 'Lien ou ID invalide.';
-    statusEl.style.color = '#e24b4a';
-    return;
-  }
-
-  statusEl.style.color = '#718096';
-  statusEl.textContent = 'Chargement des donnees...';
-
-  var apiUrl = 'https://sheets.googleapis.com/v4/spreadsheets/'+sheetId+'/values/A1:ZZ500?key='+SHEETS_API_KEY;
-
-  fetch(apiUrl).then(function(resp){
-    if(!resp.ok) throw new Error('Erreur API ('+resp.status+'). Verifiez que la feuille est partagee en lecture.');
-    return resp.json();
-  }).then(function(data){
-    var rows = data.values || [];
-    var newBlocks = [];
-    var maxNeededRow = 0, maxNeededCol = 0;
-
-    rows.forEach(function(row, rowIdx){
-      var occupiedUntil = -1;
-      row.forEach(function(cell, colIdx){
-        if(colIdx <= occupiedUntil) return;
-        var parsed = parseSheetCell(cell);
-        if(!parsed) return;
-
-        var gridRow = rowOffset + rowIdx;
-        var gridCol = colIdx;
-        var span = Math.max(1, Math.ceil(parsed.poches/ppc));
-
-        newBlocks.push({
-          row: gridRow,
-          col: gridCol,
-          dir: 'right',
-          type: 'lot',
-          lot: parsed.lot,
-          poches: parsed.poches,
-          gram: parsed.gram,
-          poids: parsed.poids,
-          date: parsed.date,
-          notes: lieu ? ('Importe depuis Google Sheet - '+lieu) : 'Importe depuis Google Sheet',
-          color: COLORS[COLORS_CYCLE_IDX % COLORS.length],
-          fontsize: '12',
-          fontweight: '700',
-          textalign: 'center',
-          borderwidth: '2',
-          borderstyle: 'double',
-          bordercolor: '#1a202c'
-        });
-        COLORS_CYCLE_IDX++;
-
-        occupiedUntil = colIdx; // cellule consommee, on avance normalement (col par col du Sheet)
-        maxNeededRow = Math.max(maxNeededRow, gridRow+1);
-        maxNeededCol = Math.max(maxNeededCol, gridCol+span);
-      });
-    });
-
-    if(!newBlocks.length){
-      statusEl.style.color = '#e24b4a';
-      statusEl.textContent = 'Aucun bloc detecte dans cette feuille.';
-      return;
-    }
-
-    if(maxNeededRow > nrows) nrows = maxNeededRow;
-    if(maxNeededCol > ncols) ncols = maxNeededCol;
-    document.getElementById('nrows').value = nrows;
-    document.getElementById('ncols').value = ncols;
-
-    blocks = blocks.concat(newBlocks);
-    saveState();
-    render();
-    closeSheetImport();
-    showToast(newBlocks.length+' blocs importes depuis Google Sheet');
-  }).catch(function(err){
-    statusEl.style.color = '#e24b4a';
-    statusEl.textContent = err.message;
-  });
-}
-
-function importJSON(event){
-  var file = event.target.files[0];
-  if(!file) return;
-  var reader = new FileReader();
-  reader.onload = function(e){
-    try{
-      var data = JSON.parse(e.target.result);
-      ppc = data.ppc || 2;
-      ncols = data.ncols || 60;
-      nrows = data.nrows || 20;
-      blocks = data.blocks || [];
-      document.getElementById('ppc').value = ppc;
-      document.getElementById('ncols').value = ncols;
-      document.getElementById('nrows').value = nrows;
-      saveState();
-      render();
-      showToast('Import reussi');
-    }catch(err){
-      alert('Fichier invalide.');
-    }
+function importData(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(ev){
+    try{var d=JSON.parse(ev.target.result);ncols=d.ncols||100;nrows=d.nrows||30;ppp=d.ppp||2;blocks=d.blocks||[];
+      document.getElementById('inp-cols').value=ncols;document.getElementById('inp-rows').value=nrows;document.getElementById('inp-ppp').value=ppp;
+      save();render();toast('Import réussi');
+    }catch(err){alert('Fichier invalide.');}
   };
-  reader.readAsText(file);
-  event.target.value = '';
+  r.readAsText(f);e.target.value='';
 }
 
-function openColCtx(e, colIdx){
-  e.preventDefault();
-  ctxTarget = {type:'col', idx:colIdx};
-  document.getElementById('ctxLabel').textContent = 'Largeur colonne '+(colIdx+1);
-  document.getElementById('ctxUnit').textContent = 'px (largeur)';
-  document.getElementById('ctxSize').value = colWidths[colIdx] || 26;
-  showCtxMenu(e.clientX, e.clientY);
+// ── IMPRESSION ──
+function openPrint(){
+  document.getElementById('pr-c2').value=ncols;
+  document.getElementById('pr-r2').value=nrows;
+  document.getElementById('modalPrint').classList.add('open');
 }
-
-function openRowCtx(e, rowIdx){
-  e.preventDefault();
-  ctxTarget = {type:'row', idx:rowIdx};
-  document.getElementById('ctxLabel').textContent = 'Hauteur rangee L'+(rowIdx+1);
-  document.getElementById('ctxUnit').textContent = 'px (hauteur)';
-  document.getElementById('ctxSize').value = rowHeights[rowIdx] || 26;
-  showCtxMenu(e.clientX, e.clientY);
-}
-
-function showCtxMenu(x, y){
-  var menu = document.getElementById('ctxMenu');
-  menu.style.display = 'block';
-  var maxX = window.innerWidth - 200;
-  var maxY = window.innerHeight - 140;
-  menu.style.left = Math.min(x, maxX)+'px';
-  menu.style.top = Math.min(y, maxY)+'px';
-}
-
-function applyCtxSize(){
-  if(!ctxTarget) return;
-  var val = parseInt(document.getElementById('ctxSize').value)||26;
-  if(ctxTarget.type==='col') colWidths[ctxTarget.idx] = val;
-  else rowHeights[ctxTarget.idx] = val;
-  document.getElementById('ctxMenu').style.display='none';
-  saveState();
-  render();
-}
-
-function resetCtxSize(){
-  if(!ctxTarget) return;
-  if(ctxTarget.type==='col') delete colWidths[ctxTarget.idx];
-  else delete rowHeights[ctxTarget.idx];
-  document.getElementById('ctxMenu').style.display='none';
-  saveState();
-  render();
-}
-
-document.addEventListener('click', function(e){
-  var menu = document.getElementById('ctxMenu');
-  if(menu && !menu.contains(e.target)){
-    menu.style.display = 'none';
+function doPrint(){
+  var title=document.getElementById('pr-title').value||'Plan des parcs';
+  var fmt2=document.getElementById('pr-format').value;
+  var ori=document.getElementById('pr-orient').value;
+  var c1=Math.max(0,(parseInt(document.getElementById('pr-c1').value)||1)-1);
+  var c2=Math.min(ncols,parseInt(document.getElementById('pr-c2').value)||ncols);
+  var r1=Math.max(0,(parseInt(document.getElementById('pr-r1').value)||1)-1);
+  var r2=Math.min(nrows,parseInt(document.getElementById('pr-r2').value)||nrows);
+  var nums=document.getElementById('pr-nums').checked;
+  var empty=document.getElementById('pr-empty').checked;
+  var map=occ();
+  var th='<colgroup>'+(nums?'<col style="width:28px">':'');
+  for(var ci=c1;ci<c2;ci++)th+='<col>';
+  th+='</colgroup>';
+  if(nums){th+='<thead><tr><th style="background:#f8f9fa;border:0.5px solid #ddd;font-size:8px"></th>';for(var c=c1;c<c2;c++)th+='<th style="background:#f8f9fa;border:0.5px solid #ddd;font-size:8px;text-align:center">'+(c+1)+'</th>';th+='</tr></thead>';}
+  var tb='<tbody>';
+  var rendered={};
+  for(var r=r1;r<r2;r++){
+    tb+='<tr>'+(nums?'<td style="background:#f8f9fa;border:0.5px solid #ddd;font-size:8px;text-align:right;padding-right:3px">L'+(r+1)+'</td>':'');
+    var c3=c1;
+    while(c3<c2){
+      var bi=map[r+'_'+c3];
+      if(bi===undefined){tb+='<td style="border:0.5px solid '+(empty?'#e2e8f0':'#f5f5f5')+';background:#fff"></td>';c3++;continue;}
+      var b=blocks[bi];
+      var cells2=bcells(b);
+      var isVert2=b.dir==='up'||b.dir==='down';
+      var isFirst2=!cells2.some(function(p){return map[p[0]+'_'+p[1]]===bi&&(p[0]<r||(p[0]===r&&p[1]<c3));});
+      if(!isFirst2){c3++;continue;}
+      var lbl2=b.type==='libre'?(b.text||''):blabel(b);
+      var sty='background:'+b.color+'55;border:'+(b.bwidth||2)+'px '+(b.bstyle||'double')+' '+(b.bcolor||'#1a202c')+';color:'+darken(b.color)+';font-size:'+(b.fsize||10)+'px;font-weight:'+(b.fweight||700)+';text-align:'+(b.align||'center')+';overflow:hidden;white-space:nowrap;text-overflow:ellipsis';
+      var visCells=cells2.filter(function(p){return p[0]===r&&p[1]>=c1&&p[1]<c2;});
+      var span2=isVert2?1:Math.max(1,visCells.length);
+      var spanAttr2=isVert2?'rowspan="'+Math.min(cells2.length,r2-r)+'"':'colspan="'+span2+'"';
+      tb+='<td '+spanAttr2+' style="'+sty+'">'+esc(lbl2)+'</td>';
+      if(isVert2)c3++; else c3+=cells2.length;
+    }
+    tb+='</tr>';
   }
-});
+  tb+='</tbody>';
+  var w=window.open('','_p','width=1200,height=900');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+esc(title)+'</title><style>@page{size:'+fmt2+' '+ori+';margin:8mm}body{font-family:sans-serif;margin:0}h1{font-size:13px;margin:0 0 5px}table{border-collapse:collapse;table-layout:fixed;width:100%}td,th{padding:0;overflow:hidden;min-width:0;box-sizing:border-box}</style></head><body><h1>'+esc(title)+'</h1><table>'+th+tb+'</table><script>window.onload=function(){window.print();window.close();}<\/script></body></html>');
+  w.document.close();
+  closeModal('modalPrint');
+}
 
-document.addEventListener('keydown', function(e){
-  if((e.ctrlKey||e.metaKey) && e.key==='z'){
-    e.preventDefault();
-    undo();
-  } else if((e.ctrlKey||e.metaKey) && (e.key==='y' || (e.shiftKey&&e.key==='Z'))){
-    e.preventDefault();
-    redo();
-  }
-});
-
-loadState();
+// ── INIT ──
+load();
 render();
+setTimeout(initDrag,100);
 </script>
 </body>
 </html>
