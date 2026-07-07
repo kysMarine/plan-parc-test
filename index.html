@@ -71,42 +71,68 @@ td.blockcell.highlighted{outline:2px solid #e63946;outline-offset:-1px;z-index:2
 /* TOAST */
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a202c;color:#fff;padding:.5rem 1.1rem;border-radius:10px;font-size:.82rem;opacity:0;transition:opacity .25s;pointer-events:none;z-index:500}
 .toast.show{opacity:1}
+
+/* DROPDOWN */
+.dropdown{position:relative;display:inline-block}
+.dropdown-btn{display:flex;align-items:center;gap:4px}
+.dropdown-btn::after{content:'▾';font-size:.65rem;color:#718096}
+.dropdown-menu{display:none;position:absolute;top:calc(100% + 4px);left:0;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.1);min-width:160px;z-index:100;overflow:hidden}
+.dropdown-menu.open{display:block}
+.dropdown-item{display:block;width:100%;text-align:left;padding:.55rem 1rem;font-size:.82rem;font-weight:500;cursor:pointer;border:none;background:#fff;color:#1a202c}
+.dropdown-item:hover{background:#f8f9fa}
+.dropdown-sep{height:1px;background:#e2e8f0;margin:2px 0}
 </style>
 </head>
 <body>
 
 <div class="header">
-  <h1>Plan des parcs</h1>
-  <div class="sep"></div>
-  <label style="font-size:.75rem;color:#718096">Colonnes</label>
-  <input type="number" id="inp-cols" value="100" min="10" max="500" style="width:60px;padding:.3rem .5rem;border:1px solid #e2e8f0;border-radius:7px;font-size:.82rem">
-  <label style="font-size:.75rem;color:#718096">Rangées</label>
-  <input type="number" id="inp-rows" value="30" min="5" max="300" style="width:60px;padding:.3rem .5rem;border:1px solid #e2e8f0;border-radius:7px;font-size:.82rem">
-  <label style="font-size:.75rem;color:#718096">Poches/px</label>
-  <input type="number" id="inp-ppp" value="2" min="0.1" step="0.1" style="width:60px;padding:.3rem .5rem;border:1px solid #e2e8f0;border-radius:7px;font-size:.82rem">
-  <button class="btn btn-primary" onclick="applySettings()">Appliquer</button>
-  <div class="sep"></div>
-  <button onclick="doZoom(-0.15)" style="width:26px;height:26px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;font-size:15px">−</button>
-  <span class="zoom-info" id="zoom-label">100%</span>
-  <button onclick="doZoom(0.15)" style="width:26px;height:26px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;font-size:15px">+</button>
-  <button class="btn" onclick="doZoom(-99)">100%</button>
-  <div class="sep"></div>
-  <input type="text" id="inp-search" placeholder="Rechercher un lot..." style="width:150px;padding:.3rem .6rem;border:1px solid #e2e8f0;border-radius:7px;font-size:.82rem" onkeydown="if(event.key==='Enter')doSearch()">
-  <button class="btn" onclick="doSearch()">Chercher</button>
-  <button class="btn" onclick="clearSearch()">✕</button>
-  <div class="sep"></div>
-  <button class="btn" onclick="calcVides()">Vides</button>
-  <button class="btn" onclick="calcRef('K2')">Poids K2</button>
-  <button class="btn" onclick="calcRef('K3')">Poids K3</button>
-  <div class="sep"></div>
-  <button class="btn" id="undoBtn" onclick="undo()" disabled>Annuler</button>
-  <button class="btn" id="redoBtn" onclick="redo()" disabled>Rétablir</button>
-  <div class="sep"></div>
-  <button class="btn" onclick="openPrint()">🖨️ Imprimer</button>
-  <button class="btn" onclick="exportData()">Exporter</button>
-  <button class="btn" onclick="document.getElementById('inp-import').click()">Importer</button>
-  <input type="file" id="inp-import" accept=".json" style="display:none" onchange="importData(event)">
-  <button class="btn btn-danger" onclick="resetAll()">Tout effacer</button>
+  <!-- Ligne 1 : titre + recherche + paramètres grille -->
+  <div style="display:flex;align-items:center;gap:10px;width:100%;flex-wrap:nowrap">
+    <h1>Plan des parcs</h1>
+    <div class="sep"></div>
+    <input type="text" id="inp-search" placeholder="Rechercher un lot..." style="width:170px;padding:.35rem .65rem;border:1px solid #e2e8f0;border-radius:7px;font-size:.82rem" onkeydown="if(event.key==='Enter')doSearch()">
+    <button class="btn btn-primary" onclick="doSearch()" style="padding:.35rem .75rem">Chercher</button>
+    <button class="btn" onclick="clearSearch()" style="padding:.35rem .6rem">✕</button>
+    <div class="sep"></div>
+    <label style="font-size:.75rem;color:#718096">Colonnes</label>
+    <input type="number" id="inp-cols" value="100" min="10" max="500" style="width:58px;padding:.3rem .5rem;border:1px solid #e2e8f0;border-radius:7px;font-size:.82rem">
+    <label style="font-size:.75rem;color:#718096">Rangées</label>
+    <input type="number" id="inp-rows" value="30" min="5" max="300" style="width:58px;padding:.3rem .5rem;border:1px solid #e2e8f0;border-radius:7px;font-size:.82rem">
+    <label style="font-size:.75rem;color:#718096">Poches/px</label>
+    <input type="number" id="inp-ppp" value="2" min="0.1" step="0.1" style="width:58px;padding:.3rem .5rem;border:1px solid #e2e8f0;border-radius:7px;font-size:.82rem">
+    <button class="btn btn-primary" onclick="applySettings()">Appliquer</button>
+    <div class="sep"></div>
+    <button onclick="doZoom(-0.15)" style="width:26px;height:26px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;font-size:15px">−</button>
+    <span class="zoom-info" id="zoom-label">100%</span>
+    <button onclick="doZoom(0.15)" style="width:26px;height:26px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;font-size:15px">+</button>
+    <button class="btn" onclick="doZoom(-99)">100%</button>
+    <div class="sep"></div>
+    <!-- Menu Calculs -->
+    <div class="dropdown" id="dd-calculs">
+      <button class="btn dropdown-btn" onclick="toggleDD('dd-calculs')">Calculs</button>
+      <div class="dropdown-menu" id="dd-calculs-menu">
+        <button class="dropdown-item" onclick="calcVides();closeDD()">📊 Emplacements vides</button>
+        <div class="dropdown-sep"></div>
+        <button class="dropdown-item" onclick="calcRef('K2');closeDD()">⚖️ Poids total K2</button>
+        <button class="dropdown-item" onclick="calcRef('K3');closeDD()">⚖️ Poids total K3</button>
+      </div>
+    </div>
+    <div class="sep"></div>
+    <button class="btn" id="undoBtn" onclick="undo()" disabled>Annuler</button>
+    <button class="btn" id="redoBtn" onclick="redo()" disabled>Rétablir</button>
+    <div class="sep"></div>
+    <!-- Menu Fichier -->
+    <div class="dropdown" id="dd-fichier">
+      <button class="btn dropdown-btn" onclick="toggleDD('dd-fichier')">Fichier</button>
+      <div class="dropdown-menu" id="dd-fichier-menu">
+        <button class="dropdown-item" onclick="openPrint();closeDD()">🖨️ Imprimer</button>
+        <div class="dropdown-sep"></div>
+        <button class="dropdown-item" onclick="exportData();closeDD()">💾 Exporter (.json)</button>
+        <div class="dropdown-sep"></div>
+        <button class="dropdown-item" style="color:#e24b4a" onclick="resetAll();closeDD()">🗑 Tout effacer</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="results" id="results"><div class="res-card" id="res-content"></div></div>
@@ -121,12 +147,22 @@ td.blockcell.highlighted{outline:2px solid #e63946;outline-offset:-1px;z-index:2
 <div class="overlay" id="modalLot">
   <div class="modal">
     <div class="modal-title" id="lot-title">Nouveau lot</div>
-    <div class="field"><label>Nombre de poches</label><input type="number" id="l-poches" min="1" value="10"></div>
+    <div class="field">
+      <label>Nombre de poches</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="number" id="l-poches" min="1" value="10" style="flex:1">
+        <label style="display:flex;align-items:center;gap:5px;font-size:.78rem;color:#718096;cursor:pointer;white-space:nowrap">
+          <input type="checkbox" id="l-vide" onchange="toggleVide()"> Vide
+        </label>
+      </div>
+    </div>
+    <div id="lot-detail-fields">
     <div class="field"><label>Grammage / Référence</label><input type="text" id="l-gram" placeholder="ex: 12 ou K2"></div>
     <div class="field"><label>Numéro de lot</label><input type="text" id="l-lot" placeholder="ex: 02S25"></div>
     <div class="field"><label>Poids/p (kg)</label><input type="number" id="l-poids" step="0.1" placeholder="ex: 2.4"></div>
     <div class="field"><label>Date</label><input type="date" id="l-date"></div>
     <div class="field"><label>Notes</label><input type="text" id="l-notes" placeholder="observations"></div>
+    </div>
     <div class="field"><label>Direction</label>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;width:120px">
         <span></span><button type="button" class="btn" id="d-up" onclick="setDir('up')">↑</button><span></span>
@@ -275,6 +311,31 @@ function applySettings(){
   ppp=Math.max(0.1,parseFloat(document.getElementById('inp-ppp').value)||2);
   save();render();
 }
+
+// ── VIDE TOGGLE ──
+function toggleVide(){
+  var isVide = document.getElementById('l-vide').checked;
+  document.getElementById('lot-detail-fields').style.display = isVide ? 'none' : 'block';
+  if(isVide){
+    // Couleur rouge automatique
+    selColor = '#F87171';
+    buildSw('lot-swatches','pickLotColor');
+  }
+}
+
+// ── DROPDOWNS ──
+function toggleDD(id){
+  var menu=document.getElementById(id+'-menu');
+  var isOpen=menu.classList.contains('open');
+  closeDD();
+  if(!isOpen)menu.classList.add('open');
+}
+function closeDD(){
+  document.querySelectorAll('.dropdown-menu.open').forEach(function(m){m.classList.remove('open');});
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.dropdown'))closeDD();
+});
 
 // ── ZOOM ──
 function doZoom(d){
@@ -443,6 +504,8 @@ function openNewLot(r,c){
   document.getElementById('l-poids').value='';
   document.getElementById('l-date').value=today();
   document.getElementById('l-notes').value='';
+  document.getElementById('l-vide').checked=false;
+  document.getElementById('lot-detail-fields').style.display='block';
   document.getElementById('l-fsize').value='10';
   document.getElementById('l-fweight').value='700';
   document.getElementById('l-align').value='center';
@@ -498,6 +561,9 @@ function openEditBlock(bi){
     document.getElementById('l-poids').value=b.poids||'';
     document.getElementById('l-date').value=b.date||'';
     document.getElementById('l-notes').value=b.notes||'';
+    var isVide=!!b.vide;
+    document.getElementById('l-vide').checked=isVide;
+    document.getElementById('lot-detail-fields').style.display=isVide?'none':'block';
     document.getElementById('l-fsize').value=b.fsize||'10';
     document.getElementById('l-fweight').value=b.fweight||'700';
     document.getElementById('l-align').value=b.align||'center';
@@ -516,16 +582,18 @@ function closeModal(id){ document.getElementById(id).classList.remove('open'); e
 // ── SAVE BLOCS ──
 function saveLot(){
   if(!editing)return;
+  var isVide=document.getElementById('l-vide').checked;
   var data={
     type:'lot', row:editing.row!==undefined?editing.row:blocks[editing.bi].row,
     col:editing.col!==undefined?editing.col:blocks[editing.bi].col,
     dir:selDir, color:selColor,
+    vide:isVide,
     poches:parseInt(document.getElementById('l-poches').value)||1,
-    gram:document.getElementById('l-gram').value.trim(),
-    lot:document.getElementById('l-lot').value.trim(),
-    poids:document.getElementById('l-poids').value,
-    date:document.getElementById('l-date').value,
-    notes:document.getElementById('l-notes').value.trim(),
+    gram:isVide?'v':''+document.getElementById('l-gram').value.trim(),
+    lot:isVide?'':document.getElementById('l-lot').value.trim(),
+    poids:isVide?'':document.getElementById('l-poids').value,
+    date:isVide?'':document.getElementById('l-date').value,
+    notes:isVide?'':document.getElementById('l-notes').value.trim(),
     fsize:document.getElementById('l-fsize').value,
     fweight:document.getElementById('l-fweight').value,
     align:document.getElementById('l-align').value,
@@ -534,7 +602,7 @@ function saveLot(){
     bcolor:document.getElementById('l-bcolor').value
   };
   if(editing.isNew)blocks.push(data); else blocks[editing.bi]=data;
-  closeModal('modalLot');save();render();toast('Bloc enregistré');
+  closeModal('modalLot');save();render();toast(isVide?'Emplacement vide enregistré':'Bloc enregistré');
 }
 
 function saveLibre(){
