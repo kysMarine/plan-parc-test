@@ -21,18 +21,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .zoom-info{font-size:.78rem;color:#718096;min-width:40px;text-align:center}
 
 /* GRILLE */
-.grid-wrap{overflow:auto;flex:1;min-height:200px;cursor:default;background:#fff}
-.grid-inner{transform-origin:top left;will-change:transform;display:inline-block}
+.grid-wrap{overflow:auto;flex:1;min-height:200px;cursor:crosshair;background:#fff}
+.grid-inner{display:inline-block}
 table{border-collapse:collapse;table-layout:fixed;width:0}
-col{width:10px}
-col.rowhead-col{width:30px}
-td,th{border:0.5px solid #e8eaed;padding:0;overflow:hidden;min-width:0}
-th.corner{position:sticky;top:0;left:0;z-index:4;background:#f8f9fa;width:30px;height:10px}
-th.ch{font-size:8px;color:#bbb;font-weight:400;background:#f8f9fa;height:10px;text-align:center;position:sticky;top:0;z-index:3;width:10px}
-th.rh{font-size:8px;color:#bbb;font-weight:400;background:#f8f9fa;width:30px;text-align:right;padding-right:4px;position:sticky;left:0;z-index:2}
-td.cell{width:10px;height:10px;background:#fff;cursor:crosshair}
+col{width:20px}
+col.rowhead-col{width:40px}
+td,th{border:0.5px solid #e8eaed;padding:0;overflow:hidden;min-width:0;box-sizing:border-box}
+th.corner{position:sticky;top:0;left:0;z-index:10;background:#f8f9fa;width:40px;height:20px}
+th.ch{font-size:7px;color:#bbb;font-weight:400;background:#f8f9fa;height:20px;text-align:center;position:sticky;top:0;z-index:3;width:20px;min-width:20px;max-width:20px}
+th.rh{font-size:7px;color:#bbb;font-weight:400;background:#f8f9fa;width:40px;min-width:40px;max-width:40px;text-align:right;padding-right:4px;position:sticky;left:0;z-index:2}
+td.cell{width:20px;min-width:20px;max-width:20px;height:20px;min-height:20px;max-height:20px;background:#fff;cursor:crosshair}
 td.cell:hover{background:#eff6ff}
 td.cell.drag-sel{background:#bfdbfe}
+td.cell.zone-sel{background:#bbf7d0;outline:1px solid #22c55e;outline-offset:-1px}
 td.blockcell{font-size:8px;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer}
 td.blockcell:hover{filter:brightness(.93)}
 td.blockcell.highlighted{outline:2px solid #e63946;outline-offset:-1px;z-index:2}
@@ -120,6 +121,9 @@ td.blockcell.highlighted{outline:2px solid #e63946;outline-offset:-1px;z-index:2
     <div class="sep"></div>
     <button class="btn" id="undoBtn" onclick="undo()" disabled>Annuler</button>
     <button class="btn" id="redoBtn" onclick="redo()" disabled>Rétablir</button>
+    <div class="sep"></div>
+    <button class="btn" id="selModeBtn" onclick="toggleSelMode()">Sélection</button>
+    <span id="selInfo" style="display:none;font-size:.75rem;color:#0ea5e9;padding:2px 8px;background:#e0f2fe;border-radius:6px"></span>
     <div class="sep"></div>
     <!-- Menu Fichier -->
     <div class="dropdown" id="dd-fichier">
@@ -245,6 +249,7 @@ td.blockcell.highlighted{outline:2px solid #e63946;outline-offset:-1px;z-index:2
     </div>
     <div class="field"><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="pr-nums" checked> Numéros colonnes/rangées</label></div>
     <div class="field"><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="pr-empty" checked> Quadrillage vide</label></div>
+    <div class="field" id="pr-sel-field" style="display:none"><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="pr-sel-only"> Imprimer uniquement la sélection</label></div>
     <div class="modal-btns">
       <button class="btn btn-primary" onclick="doPrint()">🖨️ Lancer</button>
       <button class="btn" onclick="closeModal('modalPrint')">Annuler</button>
@@ -256,7 +261,7 @@ td.blockcell.highlighted{outline:2px solid #e63946;outline-offset:-1px;z-index:2
 
 <script>
 var SK = 'plan_parc_v3';
-var CELL = 10;
+var CELL = 20;
 var ncols = 100, nrows = 30, ppp = 2;
 var blocks = [];
 var scale = 1;
@@ -323,6 +328,39 @@ function toggleVide(){
   }
 }
 
+// ── MODE SELECTION DE ZONE ──
+var selMode = false;
+var zoneSel = {r1:0,c1:0,r2:0,c2:0,active:false};
+var zoneSelDrag = false, zoneR0=0, zoneC0=0;
+
+function toggleSelMode(){
+  selMode = !selMode;
+  var btn = document.getElementById('selModeBtn');
+  btn.className = selMode ? 'btn btn-primary' : 'btn';
+  document.getElementById('selInfo').style.display = selMode ? 'inline-block' : 'none';
+  if(!selMode){
+    zoneSel.active = false;
+    document.getElementById('selInfo').textContent = '';
+    document.getElementById('pr-sel-field').style.display = 'none';
+    renderZoneSel();
+  }
+  document.getElementById('gridWrap').style.cursor = selMode ? 'cell' : 'crosshair';
+}
+
+function renderZoneSel(){
+  document.querySelectorAll('td.zone-sel').forEach(function(el){el.classList.remove('zone-sel');});
+  if(!zoneSel.active) return;
+  var r1=Math.min(zoneSel.r1,zoneSel.r2), r2=Math.max(zoneSel.r1,zoneSel.r2);
+  var c1=Math.min(zoneSel.c1,zoneSel.c2), c2=Math.max(zoneSel.c1,zoneSel.c2);
+  for(var r=r1;r<=r2;r++) for(var c=c1;c<=c2;c++){
+    var el=document.getElementById('c'+r+'_'+c);
+    if(el) el.classList.add('zone-sel');
+  }
+  var nb = (r2-r1+1)*(c2-c1+1);
+  document.getElementById('selInfo').textContent = (r2-r1+1)+' rangées × '+(c2-c1+1)+' colonnes ('+nb+' cases)';
+  document.getElementById('pr-sel-field').style.display = 'block';
+}
+
 // ── DROPDOWNS ──
 function toggleDD(id){
   var menu=document.getElementById(id+'-menu');
@@ -340,7 +378,9 @@ document.addEventListener('click',function(e){
 // ── ZOOM ──
 function doZoom(d){
   if(d===-99)scale=1; else scale=Math.max(0.2,Math.min(4,Math.round((scale+d)*10)/10));
-  document.getElementById('gridInner').style.transform='scale('+scale+')';
+  // On applique le zoom sur la table directement (pas sur gridInner)
+  // pour que les sticky headers restent fixes
+  document.getElementById('grid').style.zoom=scale;
   document.getElementById('zoom-label').textContent=Math.round(scale*100)+'%';
 }
 
@@ -424,17 +464,35 @@ function clickBlock(bi){ openEditBlock(bi); }
 
 function initDrag(){
   var grid=document.getElementById('grid');
+
   grid.addEventListener('mousedown',function(e){
     if(e.button!==0)return;
     var td=e.target.closest('td[data-r]');
     if(!td)return;
     e.preventDefault();
-    dragActive=true;
-    dragR0=+td.dataset.r; dragC0=+td.dataset.c;
-    dragSel.clear(); dragSel.add(dragR0+'_'+dragC0);
-    renderDrag();
+    if(selMode){
+      // MODE SELECTION DE ZONE
+      zoneSelDrag=true;
+      zoneR0=+td.dataset.r; zoneC0=+td.dataset.c;
+      zoneSel={r1:zoneR0,c1:zoneC0,r2:zoneR0,c2:zoneC0,active:true};
+      renderZoneSel();
+    } else {
+      // MODE NORMAL
+      dragActive=true;
+      dragR0=+td.dataset.r; dragC0=+td.dataset.c;
+      dragSel.clear(); dragSel.add(dragR0+'_'+dragC0);
+      renderDrag();
+    }
   });
+
   document.addEventListener('mousemove',function(e){
+    if(selMode && zoneSelDrag){
+      var td=document.elementFromPoint(e.clientX,e.clientY);
+      if(!td||!td.dataset||!td.dataset.r)return;
+      zoneSel.r2=+td.dataset.r; zoneSel.c2=+td.dataset.c;
+      renderZoneSel();
+      return;
+    }
     if(!dragActive)return;
     var td=document.elementFromPoint(e.clientX,e.clientY);
     if(!td||!td.dataset||!td.dataset.r)return;
@@ -444,7 +502,13 @@ function initDrag(){
     for(var rr=r1;rr<=r2;rr++)for(var cc=c1;cc<=c2;cc++)dragSel.add(rr+'_'+cc);
     renderDrag();
   });
+
   document.addEventListener('mouseup',function(){
+    if(selMode && zoneSelDrag){
+      zoneSelDrag=false;
+      renderZoneSel();
+      return;
+    }
     if(!dragActive)return;
     dragActive=false;
     if(dragSel.size===0)return;
@@ -460,14 +524,17 @@ function initDrag(){
       openNewLibre(minR,minC,sel.size);
     }
   });
+
   // zoom molette
   document.getElementById('gridWrap').addEventListener('wheel',function(e){
     if(e.ctrlKey||e.metaKey){e.preventDefault();doZoom(e.deltaY<0?0.15:-0.15);}
   },{passive:false});
+
   // keyboard
   document.addEventListener('keydown',function(e){
     if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undo();}
     if((e.ctrlKey||e.metaKey)&&(e.key==='y'||(e.shiftKey&&e.key==='Z'))){e.preventDefault();redo();}
+    if(e.key==='Escape'&&selMode){toggleSelMode();}
   });
 }
 
@@ -700,8 +767,18 @@ function importData(e){
 
 // ── IMPRESSION ──
 function openPrint(){
-  document.getElementById('pr-c2').value=ncols;
-  document.getElementById('pr-r2').value=nrows;
+  var c1=1,c2=ncols,r1=1,r2=nrows;
+  var hasZone=zoneSel.active;
+  if(hasZone){
+    c1=Math.min(zoneSel.c1,zoneSel.c2)+1; c2=Math.max(zoneSel.c1,zoneSel.c2)+1;
+    r1=Math.min(zoneSel.r1,zoneSel.r2)+1; r2=Math.max(zoneSel.r1,zoneSel.r2)+1;
+  }
+  document.getElementById('pr-c1').value=c1;
+  document.getElementById('pr-c2').value=c2;
+  document.getElementById('pr-r1').value=r1;
+  document.getElementById('pr-r2').value=r2;
+  document.getElementById('pr-sel-field').style.display=hasZone?'block':'none';
+  if(hasZone) document.getElementById('pr-sel-only').checked=true;
   document.getElementById('modalPrint').classList.add('open');
 }
 function doPrint(){
